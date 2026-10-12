@@ -1,0 +1,7 @@
+.env
+__pycache__/
+data/
+generated/
+*.jpg
+static/index.old.html
+.claude/

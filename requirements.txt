@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+python-dotenv
+google-genai
+hydradb-sdk>=2.1.1,<3
+pillow

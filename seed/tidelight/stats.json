@@ -1,0 +1,34 @@
+{
+ "layers": {
+  "brand": 22,
+  "campaigns": 31,
+  "voice": 172,
+  "market": 8,
+  "feedback": 15
+ },
+ "ad_daily_rows": 1029,
+ "ad_spend": 901899,
+ "campaigns": 8,
+ "creatives": 23,
+ "voice_by_platform": {
+  "instagram": 23,
+  "target": 16,
+  "tidelight.com": 17,
+  "amazon": 57,
+  "trustpilot": 9,
+  "reddit": 21,
+  "tiktok": 17
+ },
+ "voice_by_sentiment": {
+  "positive": 102,
+  "negative": 40,
+  "mixed": 18
+ },
+ "voice_range": [
+  "2025-03-25",
+  "2026-10-10"
+ ],
+ "graph_nodes": 271,
+ "graph_edges": 632,
+ "graph_relations": 632
+}
