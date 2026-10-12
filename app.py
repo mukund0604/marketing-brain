@@ -181,14 +181,7 @@ def brain_view():
         camps.append({"id": c["id"], "name": c["name"], "flight": c["flight"], "platforms": c["platforms"], "product": c["product"],
                       "spend": round(sp), "roas": round(sum(p["roas"] * p["spend"] for _, p in live) / max(sp, 1), 2), "kpi": c["kpi"],
                       "creatives": len([x for x in tl.CREATIVES if x[0] == c["id"]]), "fatigued": sum(1 for _, p in live if p["fatigued"])})
-    hydra = None
-    if brain.mode == "hydradb":
-        try:
-            st = brain.client.databases.stats(database=DATABASE_MB).data
-            hydra = {"knowledge_rows": st.knowledge_collection.row_count, "memory_rows": st.memory_collection.row_count}
-        except Exception:
-            pass
-    return {"brand": tl.BRAND, "stats": stats, "layers": layers, "campaigns": camps, "graph": graph, "hydra": hydra,
+    return {"brand": tl.BRAND, "stats": stats, "layers": layers, "campaigns": camps, "graph": graph,
             "competitors": tl.COMPETITORS, "sov": tl.TIDELIGHT_SOV, "database": DATABASE_MB}
 
 

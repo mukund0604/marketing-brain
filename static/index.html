@@ -3,266 +3,415 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Brand Brain</title>
+<title>Marketing Brain · Tidelight</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <script src="https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/lucide@0.453.0/dist/umd/lucide.min.js"></script>
 <style>
   :root {
-    --bg: #faf7f2; --panel: #ffffff; --ink: #1f1a17; --muted: #7a6f66; --line: #ece5db;
-    --brown: #4a2c1d; --gold: #c8a04a; --green: #2f7d4f; --red: #b8402f; --chip: #f4ede3;
-    --fb: #fff1d6; --fbink: #8a5a00; --blue: #2b5c8a; --bluebg: #e8f0f8;
+    --canvas: #f7f8fa; --surface: #ffffff; --sunken: #f2f4f7; --hover: #eef1f5; --side: #fbfbfc;
+    --line: #e5e8ee; --line-strong: #d5dae2;
+    --ink: #0f172a; --ink-2: #334155; --muted: #64748b; --faint: #94a3b8;
+    --accent: #3e63dd; --accent-ink: #2f4fc0; --accent-soft: #edf1fd; --accent-line: #c9d4f8;
+    --ok: #18794e; --ok-soft: #e9f6ef; --warn: #ad5700; --warn-soft: #fff4e5; --bad: #cd2b31; --bad-soft: #fdecec;
+    --L-B: #3e63dd; --L-B-soft: #edf1fd; --L-C: #7c3aed; --L-C-soft: #f3eefe; --L-V: #0e8a7d; --L-V-soft: #e7f6f4;
+    --L-M: #b45309; --L-M-soft: #fdf3e6; --L-F: #c2255c; --L-F-soft: #fdedf3;
+    --r-sm: 6px; --r: 8px; --r-lg: 12px;
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, .05);
+    --shadow: 0 4px 12px -2px rgba(15, 23, 42, .08), 0 2px 4px -2px rgba(15, 23, 42, .04);
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; }
-  body { margin: 0; font-family: Inter, system-ui, sans-serif; background: var(--bg); color: var(--ink); font-size: 14px; display: flex; flex-direction: column; }
-  header { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--line); background: var(--panel); flex: none; flex-wrap: wrap; }
-  header h1 { font-family: Fraunces, serif; font-size: 21px; margin: 0; color: var(--brown); }
-  header .client { color: var(--muted); }
-  .badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 99px; background: var(--chip); color: var(--brown); text-transform: uppercase; letter-spacing: .04em; }
-  .badge.hydradb { background: #e6f2ea; color: var(--green); }
-  .tabs { margin-left: auto; display: flex; gap: 4px; }
-  .tabs button { border: 0; background: none; padding: 8px 14px; border-radius: 8px; font: inherit; cursor: pointer; color: var(--muted); }
-  .tabs button.on { background: var(--chip); color: var(--brown); font-weight: 600; }
+  body { margin: 0; font: 14px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; font-feature-settings: "cv11", "ss01"; color: var(--ink); background: var(--canvas); -webkit-font-smoothing: antialiased; }
+  ::selection { background: var(--accent-soft); color: var(--accent-ink); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  * { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+  button { font: inherit; color: inherit; }
+  .num { font-variant-numeric: tabular-nums; }
+  .mono { font-family: var(--mono); font-size: 12px; }
+  .muted { color: var(--muted); } .faint { color: var(--faint); }
   .hidden { display: none !important; }
-  button.primary { font: inherit; font-weight: 600; border: 0; border-radius: 10px; padding: 10px 18px; background: var(--brown); color: #fff; cursor: pointer; }
-  button.primary:disabled { opacity: .5; cursor: wait; }
-  .caption { color: var(--muted); margin: 0; line-height: 1.5; }
-  .spinner { width: 18px; height: 18px; border: 3px solid var(--line); border-top-color: var(--brown); border-radius: 50%; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; }
-  .spinner.sm { width: 12px; height: 12px; border-width: 2px; }
+  svg.lucide { width: 16px; height: 16px; stroke-width: 1.75; flex: none; }
+
+  /* ---------- app shell */
+  .app { display: grid; grid-template-columns: 248px minmax(0, 1fr); height: 100vh; }
+  .side { background: var(--side); border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
+  .ws { display: flex; align-items: center; gap: 10px; padding: 14px 14px 12px; border-bottom: 1px solid var(--line); }
+  .ws img { width: 30px; height: 30px; border-radius: 7px; background: #123b4a; padding: 6px 4px; object-fit: contain; }
+  .ws b { display: block; font-size: 13.5px; font-weight: 600; letter-spacing: -.01em; }
+  .ws small { display: block; font-size: 11.5px; color: var(--muted); }
+  .nav { padding: 10px 8px; display: grid; gap: 1px; }
+  .nav button, .layer-link { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; padding: 7px 10px; border-radius: var(--r-sm); cursor: pointer; color: var(--ink-2); text-align: left; font-weight: 500; font-size: 13.5px; }
+  .nav button:hover, .layer-link:hover { background: var(--hover); color: var(--ink); }
+  .nav button.on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm), inset 0 0 0 1px var(--line); }
+  .nav button.on svg { color: var(--accent); }
+  .side h6 { margin: 14px 18px 6px; font-size: 11px; font-weight: 600; color: var(--faint); letter-spacing: .02em; }
+  .layers-nav { padding: 0 8px; display: grid; gap: 1px; }
+  .layer-link { font-weight: 450; font-size: 13px; }
+  .layer-link .dot { width: 8px; height: 8px; border-radius: 3px; flex: none; }
+  .layer-link .ct { margin-left: auto; font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .side-foot { margin-top: auto; padding: 12px 14px; border-top: 1px solid var(--line); display: grid; gap: 8px; }
+  .conn { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-2); }
+  .conn i { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px var(--ok-soft); }
+  .conn.off i { background: var(--bad); box-shadow: 0 0 0 3px var(--bad-soft); }
+  .side-foot .mono { color: var(--muted); font-size: 11px; }
+  .disclaimer { font-size: 11px; color: var(--faint); line-height: 1.4; }
+
+  .main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  .topbar { height: 52px; flex: none; display: flex; align-items: center; gap: 12px; padding: 0 20px; border-bottom: 1px solid var(--line); background: var(--surface); }
+  .crumbs { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+  .crumbs b { color: var(--ink); font-weight: 600; }
+  .crumbs svg { width: 14px; height: 14px; color: var(--faint); }
+  .topbar .grow { flex: 1; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: var(--r-sm); border: 1px solid var(--line-strong); background: var(--surface); font-weight: 500; font-size: 13px; cursor: pointer; color: var(--ink-2); box-shadow: var(--shadow-sm); transition: background .15s, border-color .15s; }
+  .btn:hover { background: var(--hover); color: var(--ink); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { background: var(--accent-ink); }
+  .btn:disabled { opacity: .55; cursor: not-allowed; }
+  .btn.ghost { border-color: transparent; box-shadow: none; background: none; }
+  .btn.ghost:hover { background: var(--hover); }
+  .btn.on { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent-ink); }
+  .view { flex: 1; min-height: 0; }
+
+  /* ---------- chat */
+  #view-chat { display: grid; grid-template-columns: minmax(0, 1fr) 400px; }
+  #view-chat.no-trace { grid-template-columns: minmax(0, 1fr) 0; }
+  #view-chat.no-trace .inspector { display: none; }
+  .chat { display: flex; flex-direction: column; min-height: 0; background: var(--surface); }
+  #thread { flex: 1; overflow-y: auto; }
+  .thread-inner { max-width: 780px; margin: 0 auto; padding: 28px 28px 12px; }
+  .empty { max-width: 680px; margin: 9vh auto 0; padding: 0 28px; }
+  .empty h1 { font-size: 26px; font-weight: 600; letter-spacing: -.025em; margin: 0 0 6px; }
+  .empty p { margin: 0 0 22px; color: var(--muted); }
+  .starters { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 18px; }
+  .starter { display: flex; gap: 10px; align-items: flex-start; text-align: left; padding: 11px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); cursor: pointer; font-size: 13px; color: var(--ink-2); line-height: 1.45; transition: border-color .15s, background .15s; }
+  .starter:hover { border-color: var(--accent-line); background: var(--accent-soft); color: var(--ink); }
+  .starter svg { margin-top: 1px; color: var(--muted); }
+  .starter:hover svg { color: var(--accent); }
+  .composer-wrap { flex: none; padding: 12px 28px 18px; }
+  .composer { max-width: 780px; margin: 0 auto; border: 1px solid var(--line-strong); border-radius: var(--r-lg); background: var(--surface); box-shadow: var(--shadow); transition: border-color .15s, box-shadow .15s; }
+  .composer:focus-within { border-color: var(--accent-line); box-shadow: var(--shadow), 0 0 0 3px var(--accent-soft); }
+  .composer textarea { display: block; width: 100%; border: 0; resize: none; font: inherit; font-size: 14px; padding: 12px 14px 4px; min-height: 48px; max-height: 160px; background: transparent; color: var(--ink); outline: none; }
+  .composer textarea::placeholder { color: var(--faint); }
+  .composer-bar { display: flex; align-items: center; gap: 6px; padding: 6px 8px 8px 10px; }
+  .scope { display: flex; gap: 4px; flex-wrap: wrap; }
+  .chip { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px; border-radius: 6px; font-size: 12px; color: var(--muted); background: var(--sunken); }
+  .chip i { width: 6px; height: 6px; border-radius: 2px; }
+  .send { margin-left: auto; width: 32px; height: 32px; border-radius: 8px; border: 0; background: var(--accent); color: #fff; display: grid; place-items: center; cursor: pointer; }
+  .send:hover { background: var(--accent-ink); }
+  .send:disabled { background: var(--line-strong); cursor: not-allowed; }
+
+  .msg { margin-bottom: 26px; }
+  .msg.user { display: flex; justify-content: flex-end; }
+  .msg.user .bubble { max-width: 82%; background: var(--sunken); border-radius: 12px 12px 4px 12px; padding: 9px 13px; color: var(--ink); }
+  .bot-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; font-weight: 600; }
+  .bot-head .av { width: 22px; height: 22px; border-radius: 6px; background: var(--accent); color: #fff; display: grid; place-items: center; }
+  .bot-head .av svg { width: 13px; height: 13px; }
+  .bot-head .meta { font-weight: 400; color: var(--faint); font-size: 12px; }
+  .msg.bot.selected .work { border-color: var(--accent-line); }
+  .work { border: 1px solid var(--line); border-radius: var(--r); margin-bottom: 12px; overflow: hidden; }
+  .work summary { list-style: none; display: flex; align-items: center; gap: 8px; padding: 8px 12px; cursor: pointer; font-size: 12.5px; color: var(--ink-2); background: var(--side); }
+  .work summary::-webkit-details-marker { display: none; }
+  .work summary .chev { margin-left: auto; transition: transform .15s; color: var(--faint); }
+  .work[open] summary .chev { transform: rotate(180deg); }
+  .work summary .live { width: 14px; height: 14px; border: 2px solid var(--accent-line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  @keyframes pop { from { transform: scale(.97); opacity: 0; } to { transform: none; opacity: 1; } }
-  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--brown); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 13px; z-index: 50; }
+  .steps { padding: 4px 12px 8px; border-top: 1px solid var(--line); }
+  .step { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 8px; align-items: start; padding: 6px 0; font-size: 12.5px; color: var(--ink-2); border-radius: 4px; }
+  .step + .step { border-top: 1px dashed var(--line); }
+  .step svg { width: 15px; height: 15px; margin-top: 2px; color: var(--muted); }
+  .step.thought { color: var(--muted); }
+  .step .q { display: block; font-family: var(--mono); font-size: 11.5px; color: var(--muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .step .res-n { font-size: 11.5px; color: var(--faint); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .step[data-call] { cursor: pointer; } .step[data-call]:hover { background: var(--side); }
+  .spin-sm { width: 12px; height: 12px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; display: inline-block; vertical-align: -2px; }
+  .answer { line-height: 1.65; color: var(--ink); font-size: 14.5px; }
+  .answer p { margin: 0 0 10px; } .answer p:last-child { margin-bottom: 0; }
+  .answer ul, .answer ol { margin: 4px 0 10px; padding-left: 20px; } .answer li { margin: 3px 0; }
+  .answer b { font-weight: 600; }
+  .answer.err { color: var(--bad); }
+  .cite { display: inline-flex; align-items: center; height: 17px; padding: 0 5px; margin: 0 1px; border-radius: 4px; font: 600 10.5px var(--mono); vertical-align: 1px; cursor: pointer; color: var(--L-B); background: var(--L-B-soft); }
+  .cite.C { color: var(--L-C); background: var(--L-C-soft); } .cite.V { color: var(--L-V); background: var(--L-V-soft); }
+  .cite.M { color: var(--L-M); background: var(--L-M-soft); } .cite.F { color: var(--L-F); background: var(--L-F-soft); }
+  .cite:hover { filter: brightness(.94); }
+  .creative { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 14px; }
+  .cr { border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; background: var(--surface); }
+  .cr.brain { border-color: var(--accent-line); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .cr-head { display: flex; align-items: center; gap: 6px; padding: 8px 12px; font-size: 12px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--line); }
+  .cr.brain .cr-head { color: var(--accent-ink); background: var(--accent-soft); border-color: var(--accent-line); }
+  .cr img.out { width: 100%; display: block; background: var(--sunken); }
+  .cr-body { padding: 10px 12px 12px; }
+  .cr-body h4 { margin: 0 0 6px; font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
+  .refs { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; font-size: 11.5px; color: var(--muted); }
+  .refs img { height: 28px; width: auto; border-radius: 5px; border: 1px solid var(--line); background: #e9ecea; padding: 2px; }
+  .dec { font-size: 12.5px; color: var(--ink-2); padding: 6px 0; border-top: 1px solid var(--line); line-height: 1.5; }
+  .dec b { color: var(--ink); font-weight: 600; }
 
-  #view-chat { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 44%); min-height: 0; }
-  .chatcol { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--line); }
-  #thread { flex: 1; overflow-y: auto; padding: 22px 24px; }
-  .composer { border-top: 1px solid var(--line); background: var(--panel); padding: 12px 16px; display: flex; gap: 8px; }
-  .composer textarea { flex: 1; font: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; resize: none; height: 46px; background: var(--bg); }
-  .empty h2 { font-family: Fraunces, serif; color: var(--brown); font-size: 26px; margin: 10px 0 6px; }
-  .suggest { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; max-width: 620px; }
-  .suggest button { text-align: left; font: inherit; font-size: 13px; border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 10px 12px; cursor: pointer; }
-  .suggest button:hover { border-color: var(--gold); }
-  .msg { margin-bottom: 20px; max-width: 820px; animation: pop .3s ease; }
-  .msg.user { margin-left: auto; width: fit-content; max-width: 80%; background: var(--brown); color: #fff; padding: 10px 14px; border-radius: 14px 14px 4px 14px; }
-  .msg.bot { cursor: pointer; }
-  .msg.bot.selected .steps { border-color: var(--gold); }
-  .steps { border-left: 2px solid var(--line); padding-left: 12px; margin-bottom: 10px; }
-  .step { font-size: 12.5px; color: var(--muted); padding: 3px 0; }
-  .step b { color: var(--ink); font-weight: 500; }
-  .step .q { font-family: "JetBrains Mono", monospace; font-size: 11.5px; background: var(--chip); padding: 1px 5px; border-radius: 4px; color: var(--brown); }
-  .step.thought { font-style: italic; }
-  .answer { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; line-height: 1.6; }
-  .answer p { margin: 0 0 8px; } .answer p:last-child { margin: 0; } .answer ul { margin: 4px 0 8px; padding-left: 20px; }
-  .cite { display: inline-block; font: 600 11px "JetBrains Mono", monospace; padding: 0 5px; border-radius: 5px; background: var(--bluebg); color: var(--blue); cursor: pointer; margin: 0 1px; }
-  .cite.F { background: var(--fb); color: var(--fbink); }
-  .cite.B { background: #e8f0f8; color: #2b5c8a; } .cite.C { background: #efe8f8; color: #5b3a8a; }
-  .cite.V { background: #e6f4f1; color: #1f6f5c; } .cite.M { background: #f6e9e6; color: #8a3b2b; }
-  .lay { display: inline-block; font: 600 10px Inter, sans-serif; letter-spacing: .05em; text-transform: uppercase; padding: 2px 7px; border-radius: 99px; }
-  .lay.B { background: #e8f0f8; color: #2b5c8a; } .lay.C { background: #efe8f8; color: #5b3a8a; } .lay.V { background: #e6f4f1; color: #1f6f5c; }
-  .lay.M { background: #f6e9e6; color: #8a3b2b; } .lay.F { background: var(--fb); color: var(--fbink); }
-  .creative { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 10px; }
-  .cr { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
-  .cr.brain { border-color: var(--gold); box-shadow: 0 0 0 3px #c8a04a22; }
-  .cr img { width: 100%; border-radius: 8px; display: block; background: var(--chip); }
-  .assets { display: flex; gap: 6px; align-items: center; margin: 6px 0; flex-wrap: wrap; }
-  .assets img { height: 46px; width: auto; border: 1px solid var(--line); border-radius: 6px; background: #E9ECEA; padding: 2px; }
-  .cr .lbl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 6px; }
-  .cr.brain .lbl { color: var(--gold); }
-  .cr .hl { font-family: Fraunces, serif; color: var(--brown); font-size: 16px; margin: 8px 0 2px; }
-  .dec { font-size: 12.5px; padding: 6px 0; border-top: 1px solid var(--line); line-height: 1.45; }
+  /* ---------- inspector (trace) */
+  .inspector { border-left: 1px solid var(--line); background: var(--canvas); display: flex; flex-direction: column; min-height: 0; }
+  .insp-head { flex: none; display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--surface); }
+  .insp-head b { font-size: 13.5px; font-weight: 600; }
+  .insp-head .muted { font-size: 12px; }
+  #trace { flex: 1; overflow-y: auto; padding: 14px 16px 24px; }
+  .t-empty { text-align: center; color: var(--muted); padding: 48px 12px; line-height: 1.6; font-size: 13px; }
+  .t-empty svg { width: 28px; height: 28px; color: var(--faint); margin-bottom: 8px; }
+  .t-sum { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); margin-bottom: 12px; }
+  .t-sum div { padding: 9px 11px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .t-sum div:nth-child(3n) { border-right: 0; } .t-sum div:nth-child(n+4) { border-bottom: 0; }
+  .t-sum b { display: block; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+  .t-sum span { font-size: 11.5px; color: var(--muted); }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11.5px; color: var(--muted); margin-bottom: 12px; }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .legend .sw { width: 10px; height: 10px; border-radius: 3px; }
+  .tcard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); margin-bottom: 10px; scroll-margin-top: 8px; }
+  .tcard.flash { animation: flash 1.4s ease-out; }
+  @keyframes flash { 0% { box-shadow: 0 0 0 3px var(--accent-line); } 100% { box-shadow: 0 0 0 3px transparent; } }
+  .t-top { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  .t-top .tn { font-weight: 600; font-size: 12.5px; }
+  .t-top .tms { margin-left: auto; font: 11px var(--mono); color: var(--faint); }
+  .lay { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 5px; font-size: 11px; font-weight: 600; color: var(--L-B); background: var(--L-B-soft); white-space: nowrap; }
+  .lay.C { color: var(--L-C); background: var(--L-C-soft); } .lay.V { color: var(--L-V); background: var(--L-V-soft); }
+  .lay.M { color: var(--L-M); background: var(--L-M-soft); } .lay.F { color: var(--L-F); background: var(--L-F-soft); }
+  .kv { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 3px 10px; padding: 9px 12px; font-size: 12px; border-bottom: 1px solid var(--line); background: var(--side); }
+  .kv dt { color: var(--muted); } .kv dd { margin: 0; font-family: var(--mono); font-size: 11.5px; color: var(--ink-2); word-break: break-word; }
+  .kv dd.q { font-family: inherit; font-size: 12.5px; color: var(--ink); }
+  .res { display: grid; grid-template-columns: 22px 34px minmax(0, 1fr) 72px; gap: 8px; align-items: center; padding: 6px 12px; font-size: 12.5px; cursor: pointer; }
+  .res + .res, .rdetail + .res { border-top: 1px solid var(--line); }
+  .res:hover { background: var(--side); }
+  .res .rk { font: 11px var(--mono); color: var(--faint); text-align: right; }
+  .res .rid { font: 600 11px var(--mono); color: var(--L-B); }
+  .res.C .rid { color: var(--L-C); } .res.V .rid { color: var(--L-V); } .res.M .rid { color: var(--L-M); } .res.F .rid { color: var(--L-F); }
+  .res .ttl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); }
+  .res .kind { font-size: 11px; color: var(--faint); margin-right: 6px; }
+  .score { display: grid; gap: 2px; justify-items: end; }
+  .score .bar { width: 100%; height: 4px; border-radius: 2px; background: var(--sunken); overflow: hidden; }
+  .score .bar i { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
+  .score small { font: 10.5px var(--mono); color: var(--faint); }
+  .res.unused { opacity: .5; }
+  .res.used .ttl { color: var(--ink); font-weight: 500; }
+  .res.used .rk { color: var(--ok); }
+  .res.hl { background: var(--accent-soft); opacity: 1; }
+  .newtag { display: inline-flex; height: 16px; align-items: center; padding: 0 5px; border-radius: 4px; background: var(--ok); color: #fff; font-size: 10px; font-weight: 700; margin-right: 6px; letter-spacing: .02em; }
+  .rdetail { padding: 8px 12px 10px 76px; font-size: 12px; line-height: 1.55; color: var(--ink-2); white-space: pre-wrap; background: var(--side); border-top: 1px solid var(--line); }
+  .inferred { margin-top: 8px; padding: 8px 10px; border-radius: 6px; background: var(--ok-soft); color: #134e33; white-space: normal; }
+  .inferred b { display: block; font-size: 11px; font-weight: 600; margin-bottom: 2px; color: var(--ok); }
+  .paths { padding: 8px 12px 10px; border-top: 1px solid var(--line); }
+  .paths h5 { margin: 0 0 6px; font-size: 11.5px; font-weight: 600; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .path { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; padding: 4px 0; font-size: 11.5px; }
+  .path .n { padding: 1px 6px; border-radius: 4px; background: var(--sunken); color: var(--ink-2); font-family: var(--mono); font-size: 11px; }
+  .path .p { color: var(--ok); font: 500 10.5px var(--mono); }
+  .path small { flex-basis: 100%; color: var(--faint); font-size: 11px; }
+  .t-legend-note { font-size: 11.5px; color: var(--muted); padding: 0 2px 10px; line-height: 1.5; }
 
-  .tracecol { overflow-y: auto; background: #fcfaf7; padding: 18px 20px; min-height: 0; }
-  .tracecol h2 { font-family: Fraunces, serif; color: var(--brown); font-size: 19px; margin: 0 0 4px; }
-  .tsum { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 14px; }
-  .tsum div { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; min-width: 88px; }
-  .tsum b { display: block; font-size: 18px; color: var(--brown); font-family: Fraunces, serif; }
-  .tsum span { font-size: 11px; color: var(--muted); }
-  .tcard { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; scroll-margin-top: 10px; }
-  .tcard.flash { animation: flash 1.2s ease; }
-  @keyframes flash { 0% { box-shadow: 0 0 0 3px var(--gold); } 100% { box-shadow: none; } }
-  .thead { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
-  .thead .tn { font-weight: 600; font-size: 13px; }
-  .thead .tms { font: 11px "JetBrains Mono", monospace; color: var(--muted); }
-  .params { font: 11.5px/1.7 "JetBrains Mono", monospace; color: var(--muted); background: var(--bg); border-radius: 8px; padding: 6px 10px; margin: 8px 0; word-break: break-word; }
-  .params em { color: var(--brown); font-style: normal; }
-  .res { display: grid; grid-template-columns: 24px 34px minmax(0, 1fr) 64px; gap: 8px; align-items: center; padding: 6px 4px; border-top: 1px solid var(--line); font-size: 12.5px; cursor: pointer; border-radius: 6px; }
-  .res:hover { background: var(--bg); }
-  .res .rk { color: var(--muted); font: 11px "JetBrains Mono", monospace; text-align: right; }
-  .res .rid { font: 600 11px "JetBrains Mono", monospace; color: var(--blue); }
-  .res.F .rid { color: var(--fbink); } .res.C .rid { color: #5b3a8a; } .res.V .rid { color: #1f6f5c; } .res.M .rid { color: #8a3b2b; }
-  .res .ttl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .res .kind { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-right: 6px; }
-  .bar { height: 6px; background: var(--line); border-radius: 3px; position: relative; }
-  .bar i { position: absolute; inset: 0 auto 0 0; background: var(--gold); border-radius: 3px; }
-  .bar + small { font: 10px "JetBrains Mono", monospace; color: var(--muted); }
-  .res.unused { opacity: .45; }
-  .newtag { font: 700 9.5px Inter, sans-serif; background: var(--green); color: #fff; padding: 1px 5px; border-radius: 4px; margin-right: 6px; letter-spacing: .05em; }
-  .res.used .ttl { font-weight: 600; }
-  .res.used .rid::after { content: " ✓"; color: var(--green); }
-  .res.hl { background: #fff7e3; opacity: 1; }
-  .rdetail { font-size: 12px; line-height: 1.5; color: var(--ink); background: var(--bg); border-radius: 8px; padding: 8px 10px; white-space: pre-wrap; margin: 2px 0 6px; }
-  .inferred { margin-top: 8px; padding: 6px 8px; border-left: 3px solid var(--green); background: #eef6f0; border-radius: 4px; white-space: normal; }
-  .inferred b { color: var(--green); font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; display: block; }
-  .paths { margin-top: 10px; }
-  .paths h5 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
-  .path { font: 11.5px/1.5 "JetBrains Mono", monospace; padding: 4px 0; border-top: 1px dashed var(--line); }
-  .path .n { background: var(--chip); padding: 0 4px; border-radius: 4px; color: var(--brown); }
-  .path .p { color: var(--green); font-weight: 500; }
-  .path small { display: block; color: var(--muted); font-family: Inter, sans-serif; }
-  .legend { font-size: 11.5px; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
-  .tempty { color: var(--muted); padding: 30px 0; text-align: center; line-height: 1.6; }
-
-  .page { flex: 1; overflow-y: auto; padding: 24px; }
-  .page .inner { max-width: 860px; }
-  .skillhead { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; }
-  .sk-h { font-family: Fraunces, serif; color: var(--brown); margin: 0 0 4px; font-size: 22px; }
-  .sk-sub { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 24px 0 8px; }
-  .skill { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
-  .skill.suggested { border-color: var(--gold); box-shadow: 0 0 0 3px #c8a04a22; }
-  .skill.new { animation: pop .6s ease; border-color: var(--green); }
-  .skill h4 { margin: 0 0 4px; font-size: 15px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .skill pre { white-space: pre-wrap; font: 13px/1.5 Inter, sans-serif; background: var(--bg); border-radius: 8px; padding: 10px 12px; margin: 10px 0; }
-  .skill .ev { font-size: 12px; color: var(--muted); border-left: 3px solid var(--gold); padding: 2px 0 2px 10px; margin: 6px 0; }
-  .skill details { font-size: 12px; margin-top: 8px; } .skill details pre { font-family: "JetBrains Mono", monospace; font-size: 12px; }
-  .tag { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: var(--chip); color: var(--brown); text-transform: uppercase; letter-spacing: .04em; }
-  .tag.learned { background: #e6f2ea; color: var(--green); }
-  .memgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  .mem { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; font-size: 13px; line-height: 1.45; background: var(--panel); }
-  .mem .who { font-size: 11px; color: var(--muted); margin-top: 4px; }
-  .adrow { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; padding: 8px 10px; border-bottom: 1px dashed var(--line); background: var(--panel); }
-  .win { color: var(--green); font-weight: 600; } .lose { color: var(--red); font-weight: 600; }
-
-  .page .inner.wide { max-width: 1180px; }
-  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-  .kpis div { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
-  .kpis b { display: block; font: 600 24px Fraunces, serif; color: var(--brown); }
-  .kpis span { font-size: 12px; color: var(--muted); }
-  .layers { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
-  .layer { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; cursor: pointer; transition: border-color .15s; }
-  .layer:hover, .layer.on { border-color: var(--gold); box-shadow: 0 0 0 3px #c8a04a22; }
-  .layer b { font: 600 26px Fraunces, serif; color: var(--brown); display: block; margin: 6px 0 2px; }
-  .layer p { font-size: 12px; color: var(--muted); margin: 6px 0 0; line-height: 1.45; }
-  .layer code { font: 11px "JetBrains Mono", monospace; color: var(--muted); }
-  .bgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .bcard { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-top: 12px; }
-  .bcard h4 { margin: 0 0 10px; font-size: 14px; }
-  .hbar { display: grid; grid-template-columns: 120px 1fr 60px; gap: 10px; align-items: center; font-size: 12.5px; padding: 3px 0; }
-  .hbar .track { height: 10px; background: var(--chip); border-radius: 5px; overflow: hidden; display: flex; }
+  /* ---------- pages (brain, skills) */
+  .page { overflow-y: auto; height: 100%; }
+  .page-inner { max-width: 1200px; margin: 0 auto; padding: 24px 28px 48px; }
+  .page-head { display: flex; align-items: flex-end; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+  .page-head h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -.02em; }
+  .page-head p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+  .page-head .grow { flex: 1; }
+  .stats { display: flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); margin-bottom: 18px; }
+  .stats div { flex: 1 1 140px; padding: 12px 16px; border-right: 1px solid var(--line); }
+  .stats div:last-child { border-right: 0; }
+  .stats b { display: block; font-size: 20px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .stats span { font-size: 12px; color: var(--muted); }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); margin-bottom: 16px; overflow: hidden; }
+  .panel-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  .panel-head h3 { margin: 0; font-size: 13.5px; font-weight: 600; }
+  .panel-head .muted { font-size: 12px; }
+  .panel-head .grow { flex: 1; }
+  .panel-body { padding: 14px 16px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid2 .panel { margin-bottom: 16px; }
+  table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .tbl th { text-align: left; font-weight: 500; color: var(--muted); font-size: 12px; padding: 8px 16px; background: var(--side); border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .tbl td { padding: 10px 16px; border-bottom: 1px solid var(--line); vertical-align: middle; color: var(--ink-2); }
+  .tbl tr:last-child td { border-bottom: 0; }
+  .tbl tr.click { cursor: pointer; } .tbl tr.click:hover td { background: var(--side); } .tbl tr.sel td { background: var(--accent-soft); }
+  .tbl td b { color: var(--ink); font-weight: 600; }
+  .tbl td.r, .tbl th.r { text-align: right; }
+  .hbar { display: grid; grid-template-columns: 110px minmax(0, 1fr) 44px; gap: 12px; align-items: center; font-size: 12.5px; padding: 5px 0; color: var(--ink-2); }
+  .hbar .track { height: 8px; border-radius: 4px; background: var(--sunken); display: flex; overflow: hidden; }
   .hbar .track i { display: block; height: 100%; }
-  .hbar small { color: var(--muted); font: 11px "JetBrains Mono", monospace; text-align: right; }
-  table.camps { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-  table.camps th { text-align: left; font-weight: 500; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; padding: 6px 8px; border-bottom: 1px solid var(--line); }
-  table.camps td { padding: 7px 8px; border-bottom: 1px dashed var(--line); vertical-align: middle; }
-  .roasbar { position: relative; height: 8px; background: var(--chip); border-radius: 4px; width: 120px; display: inline-block; vertical-align: middle; margin-right: 6px; }
-  .roasbar i { position: absolute; inset: 0 auto 0 0; border-radius: 4px; }
-  .roasbar u { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); }
-  #graph { height: 460px; border: 1px solid var(--line); border-radius: 10px; background: #fcfaf7; }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-  .chips button { font: 12px Inter, sans-serif; border: 1px solid var(--line); background: var(--panel); border-radius: 99px; padding: 4px 10px; cursor: pointer; }
-  .chips button.on { background: var(--brown); color: #fff; border-color: var(--brown); }
-  #rsearch { font: inherit; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; }
-  .rec { border-top: 1px solid var(--line); padding: 8px 0; font-size: 12.5px; }
-  .rec b { font-weight: 600; } .rec pre { white-space: pre-wrap; font: 12px/1.5 Inter, sans-serif; color: var(--muted); margin: 4px 0 0; }
-  @media (max-width: 900px) { .bgrid { grid-template-columns: 1fr; } .hbar { grid-template-columns: 90px 1fr 50px; } }
+  .hbar small { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .keyrow { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--muted); margin-top: 10px; }
+  .keyrow span { display: inline-flex; align-items: center; gap: 5px; } .keyrow i { width: 8px; height: 8px; border-radius: 2px; }
+  .roas { display: inline-flex; align-items: center; gap: 8px; }
+  .roas .rb { position: relative; width: 120px; height: 6px; border-radius: 3px; background: var(--sunken); }
+  .roas .rb i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; }
+  .roas .rb u { position: absolute; top: -3px; bottom: -3px; width: 2px; border-radius: 1px; background: var(--ink); }
+  .pill { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 5px; font-size: 11.5px; font-weight: 500; }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); } .pill.bad { background: var(--bad-soft); color: var(--bad); } .pill.warn { background: var(--warn-soft); color: var(--warn); } .pill.neutral { background: var(--sunken); color: var(--muted); }
+  #graph { height: 480px; background: var(--side); }
+  .seg { display: inline-flex; padding: 2px; border-radius: 7px; background: var(--sunken); gap: 2px; flex-wrap: wrap; }
+  .seg button { border: 0; background: none; height: 26px; padding: 0 10px; border-radius: 5px; font-size: 12px; font-weight: 500; color: var(--muted); cursor: pointer; }
+  .seg button.on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
+  .ginfo { padding: 10px 16px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); min-height: 40px; }
+  .ginfo b { color: var(--ink); }
+  .search { display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 1px solid var(--line-strong); border-radius: var(--r-sm); background: var(--surface); }
+  .search input { border: 0; outline: none; font: inherit; font-size: 13px; width: 200px; background: transparent; }
+  .search svg { color: var(--faint); width: 15px; height: 15px; }
+  .rec { padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  .rec:last-child { border-bottom: 0; }
+  .rec-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; font-size: 13px; }
+  .rec-top b { font-weight: 600; } .rec-top .muted { font-size: 12px; margin-left: auto; white-space: nowrap; }
+  .rec pre { margin: 0; white-space: pre-wrap; font: 12.5px/1.55 Inter, sans-serif; color: var(--muted); max-height: 7.8em; overflow: hidden; }
+  .skill { padding: 14px 16px; border-bottom: 1px solid var(--line); }
+  .skill:last-child { border-bottom: 0; }
+  .skill-top { display: flex; align-items: center; gap: 8px; }
+  .skill-top b { font-size: 13.5px; font-weight: 600; }
+  .skill-top .grow { flex: 1; }
+  .skill p { margin: 4px 0 0; color: var(--muted); font-size: 12.5px; }
+  .skill pre { margin: 10px 0 0; white-space: pre-wrap; font: 12px/1.6 var(--mono); color: var(--ink-2); background: var(--side); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 10px 12px; }
+  .skill.suggested { background: linear-gradient(var(--accent-soft), var(--accent-soft)) left / 3px 100% no-repeat; }
+  .skill.fresh { animation: flash 1.6s ease-out; }
+  .ev { margin-top: 8px; font-size: 12px; color: var(--ink-2); padding: 6px 10px; background: var(--side); border-radius: 6px; }
+  .ev b { color: var(--muted); font-weight: 500; }
+  .skill details { margin-top: 8px; font-size: 12px; color: var(--muted); }
+  .skeleton { height: 12px; border-radius: 4px; background: linear-gradient(90deg, var(--sunken), var(--hover), var(--sunken)); background-size: 200% 100%; animation: sh 1.2s infinite; margin: 8px 0; }
+  @keyframes sh { to { background-position: -200% 0; } }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; background: var(--ink); color: #fff; padding: 10px 14px; border-radius: 8px; font-size: 13px; box-shadow: var(--shadow); z-index: 50; animation: up .2s ease-out; }
+  .toast svg { color: #4ade80; }
+  @keyframes up { from { opacity: 0; transform: translate(-50%, 6px); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; } }
 
-  @media (max-width: 900px) {
-    #view-chat { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) minmax(0, 45%); }
-    .chatcol { border-right: 0; border-bottom: 1px solid var(--line); }
-    #thread, .tracecol, .page { padding: 16px; }
-    .memgrid { grid-template-columns: 1fr; }
-    .tabs { margin-left: 0; width: 100%; }
+  @media (max-width: 1100px) { #view-chat { grid-template-columns: minmax(0, 1fr) 340px; } }
+  @media (max-width: 860px) {
+    .app { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
+    .side { flex-direction: row; align-items: center; border-right: 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
+    .ws { border-bottom: 0; padding: 10px 12px; } .ws small { display: none; }
+    .nav { display: flex; padding: 6px; } .side h6, .layers-nav, .side-foot { display: none; }
+    #view-chat, #view-chat.no-trace { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; }
+    .inspector { border-left: 0; border-top: 1px solid var(--line); max-height: 42vh; }
+    .starters, .grid2 { grid-template-columns: 1fr; }
+    .thread-inner, .composer-wrap, .page-inner { padding-left: 16px; padding-right: 16px; }
+    .topbar { padding: 0 12px; }
+    .crumbs > span, .crumbs > svg { display: none; }
+    .topbar .btn { font-size: 0; gap: 0; padding: 0 9px; }
+    .scope { display: none; }
+    .empty { margin-top: 4vh; } .empty h1 { font-size: 22px; }
+    .t-sum { grid-template-columns: repeat(3, 1fr); }
+    .search input { width: 120px; }
+    .tbl { display: block; overflow-x: auto; }
   }
 </style>
 </head>
 <body>
-<header>
-  <h1>Brand Brain</h1>
-  <span class="client">· Tidelight <span class="caption" style="font-size:11px">(fictional demo brand)</span></span>
-  <span id="mode" class="badge">…</span>
-  <nav class="tabs">
-    <button data-tab="chat" class="on">Chat</button>
-    <button data-tab="brain">Brain</button>
-    <button data-tab="skills">Skills</button>
-  </nav>
-</header>
-
-<section id="view-chat">
-  <div class="chatcol">
-    <div id="thread">
-      <div class="empty" id="empty">
-        <span class="badge hydradb">HydraDB · brand book · 18 mo of campaigns · consumer voice · market · client memory</span>
-        <h2>Tidelight's marketing brain.</h2>
-        <p class="caption">Every reply shows exactly what was pulled from HydraDB, how it was ranked, which graph paths were followed, and what was used vs ignored.</p>
-        <div class="suggest">
-          <button>How did our SPF campaigns perform, and what were consumers saying at the time?</button>
-          <button>What are people saying about Tidelight across Amazon, Reddit and TikTok right now?</button>
-          <button>Make a Meta 4:5 ad for the tinted Fog Shield SPF 30, and compare it with a no-memory version</button>
-          <button>Which creatives are fatiguing, and what should replace them based on past winners?</button>
-          <button>How do we stack up against petal & pine and noma skin, and where's the white space?</button>
-          <button>What's every rule a Kelp Ceramide Cream ad must follow: colors, type, logo, layout, claims?</button>
-        </div>
-      </div>
+<!--
+THESIS: The category canon (Glean/Linear-grade knowledge workspace), refusing the prototype look: the trace is a first-class inspector, not a side note.
+OWN-WORLD: Light neutral surfaces, one accent (#3E63DD) for action/selection; five muted layer hues as the only other color, used for provenance (B/C/V/M/F). Inter, JetBrains Mono for ids/data only. Lucide icons. 8px radii, 1px borders, no ghost cards.
+STORY: The viewer sees what the brain holds, asks, watches the agent search layers, and audits every memory it used.
+FIRST VIEWPORT: Sidebar (workspace, nav, layers with counts, HydraDB status) · centered ask composer with six starter questions · trace inspector on the right.
+FORM: Canon, played straight (user choice: Glean/Linear/Vercel). Build path: code-led.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+-->
+<div class="app">
+  <aside class="side">
+    <div class="ws">
+      <img src="/static/assets/logo_reversed.png" alt="">
+      <div><b>Tidelight</b><small>Demo workspace · fictional brand</small></div>
     </div>
-    <div class="composer">
-      <textarea id="input" placeholder="Ask about campaigns, consumers, competitors, guidelines, or brief a creative…"></textarea>
-      <button class="primary" id="send">Send</button>
-    </div>
-  </div>
-  <aside class="tracecol" id="trace">
-    <div class="tempty">
-      <h2>Brain trace</h2>
-      Send a message to see every HydraDB call:<br>the query, ranking scores, graph paths,<br>and which memories the agent actually used.
+    <nav class="nav">
+      <button data-tab="chat" class="on"><i data-lucide="sparkles"></i>Ask</button>
+      <button data-tab="brain"><i data-lucide="brain"></i>Brain</button>
+      <button data-tab="skills"><i data-lucide="wand-sparkles"></i>Skills</button>
+    </nav>
+    <h6>Memory layers</h6>
+    <div class="layers-nav" id="layersNav"></div>
+    <div class="side-foot">
+      <div class="conn" id="conn"><i></i><span>Connecting to HydraDB…</span></div>
+      <div class="mono" id="dbname"></div>
+      <div class="disclaimer">Tidelight and its competitors are fictional. All data is synthetic.</div>
     </div>
   </aside>
-</section>
 
-<section id="view-skills" class="page hidden">
-  <div class="inner">
-    <div class="skillhead">
-      <div>
-        <h2 class="sk-h">Brand Brain Skills</h2>
-        <p class="caption">Corrections that keep coming back shouldn't depend on someone remembering to write a skill. The brain reads its feedback memory and proposes them.</p>
+  <main class="main">
+    <header class="topbar">
+      <div class="crumbs"><span>Marketing Brain</span><i data-lucide="chevron-right"></i><b id="crumb">Ask</b></div>
+      <div class="grow"></div>
+      <button class="btn ghost" id="newChat"><i data-lucide="square-pen"></i>New chat</button>
+      <button class="btn on" id="traceToggle"><i data-lucide="panel-right"></i>Trace</button>
+    </header>
+
+    <section class="view" id="view-chat">
+      <div class="chat">
+        <div id="thread">
+          <div class="empty" id="empty">
+            <h1>What do you want to know about Tidelight?</h1>
+            <p>Answers and creatives come from the brand's memory in HydraDB. Every reply shows what was searched, how it ranked, and what was used.</p>
+            <div class="starters" id="starters"></div>
+          </div>
+          <div class="thread-inner" id="threadInner"></div>
+        </div>
+        <div class="composer-wrap">
+          <div class="composer">
+            <textarea id="input" rows="1" placeholder="Ask about campaigns, consumers, competitors, guidelines, or brief a creative…"></textarea>
+            <div class="composer-bar">
+              <div class="scope" id="scope"></div>
+              <button class="send" id="send" aria-label="Send"><i data-lucide="arrow-up"></i></button>
+            </div>
+          </div>
+        </div>
       </div>
-      <button class="primary" id="suggest">Suggest skills from feedback</button>
-    </div>
-    <div id="suggestions"></div>
-    <h3 class="sk-sub">Active skills</h3>
-    <div id="skilllist"></div>
-  </div>
-</section>
+      <aside class="inspector">
+        <div class="insp-head"><i data-lucide="list-tree"></i><b>Trace</b><span class="muted" id="traceTurn"></span></div>
+        <div id="trace">
+          <div class="t-empty"><i data-lucide="radar"></i><br>Ask something to see every HydraDB query,<br>its ranked results, the graph paths it followed,<br>and which memories the agent actually used.</div>
+        </div>
+      </aside>
+    </section>
 
-<section id="view-brain" class="page hidden">
-  <div class="inner wide">
-    <div class="skillhead"><div>
-      <h2 class="sk-h">What the brain knows</h2>
-      <p class="caption" id="bsub">Everything below lives in HydraDB and is what the agent searches.</p>
-    </div></div>
-    <div class="kpis" id="bkpis"></div>
-    <h3 class="sk-sub">Layers · one HydraDB collection each</h3>
-    <div class="layers" id="blayers"></div>
-    <div class="bgrid">
-      <div class="bcard"><h4>Consumer voice by source</h4><div id="bsources"></div></div>
-      <div class="bcard"><h4>Share of category voice · 90 days</h4><div id="bsov"></div></div>
-    </div>
-    <div class="bcard"><h4>Campaign history · ClickHouse actuals vs target</h4><div id="bcamps"></div></div>
-    <div class="bcard">
-      <div class="thead"><h4>Brand graph in HydraDB · BYOG, BrandOS schema</h4><span class="caption" id="gcount"></span></div>
-      <div class="chips" id="gfilters"></div>
-      <div id="graph"></div>
-      <div class="caption" id="ginfo" style="margin-top:6px">Click a node to see its connections.</div>
-    </div>
-    <div class="bcard">
-      <div class="thead"><h4 id="rtitle">Records</h4><input id="rsearch" placeholder="filter records…"></div>
-      <div id="records"></div>
-    </div>
-  </div>
-</section>
+    <section class="view page hidden" id="view-brain">
+      <div class="page-inner">
+        <div class="page-head">
+          <div><h1>Brain</h1><p id="bsub">Everything the agent can search, stored in HydraDB.</p></div>
+        </div>
+        <div class="stats" id="bstats"></div>
+        <div class="panel">
+          <div class="panel-head"><h3>Memory layers</h3><span class="muted">One HydraDB collection per layer · click to browse records</span></div>
+          <table class="tbl" id="blayers"></table>
+        </div>
+        <div class="grid2">
+          <div class="panel"><div class="panel-head"><h3>Consumer voice by source</h3><span class="muted">160 posts · sentiment split</span></div><div class="panel-body" id="bsources"></div></div>
+          <div class="panel"><div class="panel-head"><h3>Share of category voice</h3><span class="muted">Last 90 days</span></div><div class="panel-body" id="bsov"></div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Campaign history</h3><span class="muted">Actual ROAS from daily ad data vs target</span></div>
+          <table class="tbl" id="bcamps"></table>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Brand graph</h3><span class="muted" id="gcount"></span><div class="grow"></div><div class="seg" id="gfilters"></div></div>
+          <div id="graph"></div>
+          <div class="ginfo" id="ginfo">Click a node to see its relationships. Schema follows Zocket's BrandOS graph (HydraDB Bring Your Own Graph).</div>
+        </div>
+        <div class="panel" id="recordsPanel">
+          <div class="panel-head"><h3 id="rtitle">Records</h3><div class="grow"></div><label class="search"><i data-lucide="search"></i><input id="rsearch" placeholder="Filter records"></label></div>
+          <div id="records"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view page hidden" id="view-skills">
+      <div class="page-inner" style="max-width: 920px">
+        <div class="page-head">
+          <div><h1>Skills</h1><p>Per-brand instructions every Creative AI run follows. The brain proposes new ones from corrections that keep coming back.</p></div>
+          <div class="grow"></div>
+          <button class="btn primary" id="suggest"><i data-lucide="sparkles"></i>Suggest from feedback</button>
+        </div>
+        <div id="suggestions"></div>
+        <div class="panel"><div class="panel-head"><h3>Active skills</h3><span class="muted" id="skillcount"></span></div><div id="skilllist"></div></div>
+      </div>
+    </section>
+  </main>
+</div>
 
 <script>
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-function toast(t) { const d = document.createElement("div"); d.className = "toast"; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 2600); }
+const icons = () => window.lucide && lucide.createIcons({ attrs: { "stroke-width": 1.75 } });
+function toast(t) { const d = document.createElement("div"); d.className = "toast"; d.innerHTML = `<i data-lucide="check-circle-2"></i>${esc(t)}`; document.body.appendChild(d); icons(); setTimeout(() => d.remove(), 2800); }
 async function api(path, body) {
   const r = await fetch(path, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {});
   if (!r.ok) throw new Error(await r.text());
@@ -276,50 +425,108 @@ function md(s) {
     .split(/\n{2,}/).map((p) => (p.startsWith("<ul>") ? p : `<p>${p.replace(/\n/g, "<br>")}</p>`)).join("");
   return cites(h);
 }
-const fmtMs = (ms) => ms == null ? "" : ms >= 1000 ? (ms / 1000).toFixed(1) + "s" : ms + "ms";
-const LAYER = { search_brand_book: ["B", "brand book"], search_campaigns: ["C", "campaigns"], search_consumer_voice: ["V", "consumer voice"],
-  search_market: ["M", "market"], search_client_feedback: ["F", "client feedback"] };
-const LABEL = { search_brand_book: "📘 Searching brand book", search_campaigns: "📈 Searching campaigns + creative performance",
-  search_consumer_voice: "💬 Searching consumer voice", search_market: "🧭 Searching market + competitors", search_client_feedback: "🗂️ Searching client feedback memory",
-  generate_creative: "🎨 Generating creative", remember_feedback: "🧠 Storing feedback in memory", suggest_skills: "✨ Proposing skills", promote_skill: "⬆️ Promoting skill" };
+const fmtMs = (ms) => ms == null ? "–" : ms >= 1000 ? (ms / 1000).toFixed(1) + "s" : ms + "ms";
 
+const LAYERS = {
+  brand: { k: "B", name: "Brand book", icon: "book-open", tool: "search_brand_book" },
+  campaigns: { k: "C", name: "Campaigns", icon: "line-chart", tool: "search_campaigns" },
+  voice: { k: "V", name: "Consumer voice", icon: "messages-square", tool: "search_consumer_voice" },
+  market: { k: "M", name: "Market", icon: "compass", tool: "search_market" },
+  feedback: { k: "F", name: "Client feedback", icon: "message-square-warning", tool: "search_client_feedback" },
+};
+const BY_TOOL = Object.fromEntries(Object.entries(LAYERS).map(([id, l]) => [l.tool, { ...l, id }]));
+const ACTION = { generate_creative: ["image", "Generating creative"], remember_feedback: ["brain-circuit", "Writing to feedback memory"],
+  suggest_skills: ["wand-sparkles", "Proposing skills"], promote_skill: ["arrow-up-circle", "Promoting skill"] };
+const STARTERS = [
+  ["line-chart", "How did our SPF campaigns perform, and what were consumers saying at the time?"],
+  ["messages-square", "What are people saying about Tidelight across Amazon, Reddit and TikTok?"],
+  ["image", "Make a Meta 4:5 ad for the tinted Fog Shield SPF 30, and compare it with a no-memory version"],
+  ["timer-reset", "Which creatives are fatiguing, and what should replace them based on past winners?"],
+  ["compass", "How do we stack up against petal & pine and noma skin, and where's the white space?"],
+  ["book-open", "What's every rule a Kelp Ceramide Cream ad must follow: colors, type, logo, layout, claims?"],
+];
+
+// ------------------------------------------------------------ shell
+let brainData = null;
+const VIEWS = { chat: "Ask", brain: "Brain", skills: "Skills" };
+function show(tab) {
+  document.querySelectorAll(".nav button").forEach((x) => x.classList.toggle("on", x.dataset.tab === tab));
+  Object.keys(VIEWS).forEach((t) => $(`#view-${t}`).classList.toggle("hidden", t !== tab));
+  $("#crumb").textContent = VIEWS[tab];
+  $("#newChat").classList.toggle("hidden", tab !== "chat"); $("#traceToggle").classList.toggle("hidden", tab !== "chat");
+  if (tab === "brain") loadBrain();
+  if (tab === "skills") loadSkills();
+}
+document.querySelectorAll(".nav button").forEach((b) => b.onclick = () => show(b.dataset.tab));
+$("#traceToggle").onclick = () => { const v = $("#view-chat"); v.classList.toggle("no-trace"); $("#traceToggle").classList.toggle("on", !v.classList.contains("no-trace")); };
+$("#newChat").onclick = () => { if (busy) return; history.length = 0; turns.length = 0; current = null; $("#threadInner").innerHTML = ""; $("#empty").classList.remove("hidden");
+  $("#trace").innerHTML = `<div class="t-empty"><i data-lucide="radar"></i><br>Ask something to see the trace.</div>`; $("#traceTurn").textContent = ""; icons(); };
+
+async function loadShell() {
+  try {
+    const [s, b] = await Promise.all([api("/api/status"), api("/api/brain")]);
+    brainData = b;
+    $("#conn").innerHTML = `<i></i><span>HydraDB connected</span>`;
+    $("#dbname").textContent = b.database;
+    $("#layersNav").innerHTML = Object.entries(LAYERS).map(([id, l]) => `<button class="layer-link" data-l="${id}"><span class="dot" style="background:var(--L-${l.k})"></span>${l.name}<span class="ct">${b.layers[id].count}</span></button>`).join("");
+    $("#scope").innerHTML = `<span class="chip">Searches</span>` + Object.values(LAYERS).map((l) => `<span class="chip"><i style="background:var(--L-${l.k})"></i>${l.name}</span>`).join("");
+    document.querySelectorAll(".layer-link").forEach((el) => el.onclick = () => { recLayer = el.dataset.l; show("brain"); setTimeout(() => $("#recordsPanel").scrollIntoView({ behavior: "smooth" }), 80); });
+  } catch (e) { $("#conn").classList.add("off"); $("#conn").innerHTML = `<i></i><span>HydraDB unavailable</span>`; }
+}
+$("#starters").innerHTML = STARTERS.map(([ic, q]) => `<button class="starter"><i data-lucide="${ic}"></i><span>${esc(q)}</span></button>`).join("");
+document.querySelectorAll(".starter").forEach((b) => b.onclick = () => send(b.textContent.trim()));
+
+// ------------------------------------------------------------ chat
 const history = [], turns = [];
 let current = null, busy = false;
+const input = $("#input");
+input.addEventListener("input", () => { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, 160) + "px"; });
+input.onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("#send").click(); } };
+$("#send").onclick = () => { const v = input.value; input.value = ""; input.style.height = "auto"; send(v); };
 
-function stepLine(ev) {
+function stepHTML(ev) {
   if (ev.type === "thought") {
-    const first = ev.text.replace(/\*\*/g, "").split("\n").find((l) => l.trim()) || "thinking";
-    return `<div class="step thought">💭 ${esc(first.slice(0, 140))}</div>`;
+    const first = ev.text.replace(/\*\*/g, "").split("\n").find((l) => l.trim()) || "Thinking";
+    return `<div class="step thought"><i data-lucide="lightbulb"></i><span>${esc(first.slice(0, 150))}</span><span></span></div>`;
   }
+  const L = BY_TOOL[ev.name];
+  const [ic, label] = L ? [L.icon, `Searching ${L.name.toLowerCase()}`] : (ACTION[ev.name] || ["wrench", ev.name]);
   const q = ev.args.query || ev.args.brief || ev.args.text || ev.args.title || "";
-  return `<div class="step" data-call="${ev._i}"><b>${LABEL[ev.name] || ev.name}</b>${q ? ` <span class="q">${esc(q.slice(0, 90))}</span>` : ""} <span class="pending"><span class="spinner sm"></span>${ev.name === "remember_feedback" ? " writing to HydraDB, waiting until it's indexed & searchable…" : ""}</span></div>`;
+  return `<div class="step" data-call="${ev._i}"><i data-lucide="${ic}" ${L ? `style="color:var(--L-${L.k})"` : ""}></i>
+    <span>${esc(label)}${q ? `<span class="q">${esc(q)}</span>` : ""}</span><span class="res-n"><span class="spin-sm"></span>${ev.name === "remember_feedback" ? " indexing" : ""}</span></div>`;
 }
 
 function creativeHTML(tr) {
-  const one = (d, brain) => !d ? "" : `<div class="cr ${brain ? "brain" : ""}"><div class="lbl">${brain ? "With Brand Brain" : "Without brain (control)"}</div>
-    <img src="${d.image_url}" alt="">${d.assets?.length ? `<div class="assets"><span class="caption">refs:</span>${d.assets.map((a) => `<img src="${a}">`).join("")}</div>` : ""}<div class="hl">${esc(d.headline)}</div>
-    ${(d.decisions || []).map((x) => `<div class="dec"><b>${esc(x.decision)}</b> — ${esc(String(x.because).replace(/\s*\[[BCVMF\d,\s]+\]/g, ""))} ${brain ? ids(`${x.because} ${x.source}`).map(chip).join("") : ""}</div>`).join("")}</div>`;
+  const one = (d, brain) => !d ? "" : `<div class="cr ${brain ? "brain" : ""}">
+    <div class="cr-head"><i data-lucide="${brain ? "brain" : "circle-dashed"}"></i>${brain ? "With Marketing Brain" : "Control · no memory"}</div>
+    <img class="out" src="${d.image_url}" alt="${esc(d.visual || "")}">
+    <div class="cr-body"><h4>${esc(d.headline)}</h4>
+      ${d.assets?.length ? `<div class="refs">Verified assets ${d.assets.map((a) => `<img src="${a}" alt="">`).join("")}</div>` : ""}
+      ${(d.decisions || []).map((x) => `<div class="dec"><b>${esc(x.decision)}</b> · ${esc(String(x.because).replace(/\s*\[[BCVMF\d,\s]+\]/g, ""))} ${brain ? ids(`${x.because} ${x.source}`).map(chip).join("") : ""}</div>`).join("")}
+    </div></div>`;
   return `<div class="creative">${one(tr.plain, false)}${one(tr.brain, true)}</div>`;
 }
 
 async function send(text) {
   if (busy || !text.trim()) return;
   busy = true; $("#send").disabled = true;
-  $("#empty")?.remove();
+  $("#empty").classList.add("hidden");
   history.push({ role: "user", text });
-  $("#thread").insertAdjacentHTML("beforeend", `<div class="msg user">${esc(text)}</div>`);
+  $("#threadInner").insertAdjacentHTML("beforeend", `<div class="msg user"><div class="bubble">${esc(text)}</div></div>`);
   const el = document.createElement("div");
   el.className = "msg bot";
-  el.innerHTML = `<div class="steps"><div class="step"><span class="spinner sm"></span> planning…</div></div><div class="out"></div>`;
-  $("#thread").appendChild(el);
-  const turn = { events: [], used: new Set(), el, n: turns.length + 1 };
+  el.innerHTML = `<div class="bot-head"><span class="av"><i data-lucide="sparkles"></i></span>Marketing Brain<span class="meta"></span></div>
+    <details class="work" open><summary><span class="live"></span><span class="sum">Planning which memory layers to search…</span><i data-lucide="chevron-down" class="chev"></i></summary><div class="steps"></div></details><div class="out"></div>`;
+  $("#threadInner").appendChild(el);
+  icons();
+  const turn = { events: [], used: new Set(), el, n: turns.length + 1, t0: Date.now() };
   turns.push(turn);
-  el.onclick = (e) => { if (!e.target.closest(".cite")) select(turn); };
+  el.onclick = (e) => { if (!e.target.closest(".cite, summary, .step")) select(turn); };
   select(turn); scrollThread();
   try {
     const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: history }) });
     const reader = r.body.getReader(), dec = new TextDecoder();
-    let buf = "", first = true;
+    let buf = "";
     for (;;) {
       const { value, done } = await reader.read();
       if (done) break;
@@ -327,66 +534,74 @@ async function send(text) {
       let i;
       while ((i = buf.indexOf("\n\n")) >= 0) {
         const line = buf.slice(0, i); buf = buf.slice(i + 2);
-        if (!line.startsWith("data: ")) continue;
-        if (first) { $(".steps", el).innerHTML = ""; first = false; }
-        handle(turn, JSON.parse(line.slice(6)));
+        if (line.startsWith("data: ")) handle(turn, JSON.parse(line.slice(6)));
       }
     }
   } catch (e) { handle(turn, { type: "error", text: e.message }); }
   busy = false; $("#send").disabled = false;
 }
 
+function summarize(turn, done) {
+  const calls = turn.events.filter((e) => e.type === "tool_result");
+  const searches = calls.filter((e) => e.trace.results);
+  const layers = new Set(searches.map((e) => e.trace.layer));
+  const n = searches.reduce((a, e) => a + e.trace.results.length, 0);
+  const secs = ((Date.now() - turn.t0) / 1000).toFixed(1);
+  if (!calls.length) return done ? `Answered from conversation · ${secs}s` : "Planning which memory layers to search…";
+  return `${done ? "Searched" : "Searching"} ${layers.size} layer${layers.size === 1 ? "" : "s"} · ${searches.length} quer${searches.length === 1 ? "y" : "ies"} · ${n} results${done ? ` · ${secs}s` : ""}`;
+}
+
 function handle(turn, ev) {
   const el = turn.el;
   ev._i = turn.events.length;
   turn.events.push(ev);
-  if (ev.type === "thought" || ev.type === "tool_call") $(".steps", el).insertAdjacentHTML("beforeend", stepLine(ev));
+  if (ev.type === "thought" || ev.type === "tool_call") { $(".steps", el).insertAdjacentHTML("beforeend", stepHTML(ev)); icons(); }
   if (ev.type === "tool_result") {
     const call = turn.events.find((e) => e.type === "tool_call" && e.name === ev.name && !e._done);
     if (call) {
       call._done = true; ev._call = call._i;
-      const n = ev.trace.results ? ` · ${ev.trace.results.length} results${ev.trace.paths?.length ? ` · ${ev.trace.paths.length} graph paths` : ""}` : "";
       const s = $(`[data-call="${call._i}"]`, el);
       if (s) {
-        const extra = ev.name === "remember_feedback" && ev.trace.stored
-          ? ` · ingest ack ${fmtMs(ev.trace.ingest_ack_ms)} · ${ev.trace.searchable_after_s != null ? `searchable after ${ev.trace.searchable_after_s}s` : "still indexing"}` : n;
-        $(".pending", s).innerHTML = ev.trace.error ? `<span style="color:var(--red)">✗ error</span>` : `<span style="color:var(--green)">✓</span> ${fmtMs(ev.ms)}${extra}`;
-        s.style.cursor = "pointer";
+        const t = ev.trace;
+        const right = t.error ? `<span style="color:var(--bad)">failed</span>`
+          : ev.name === "remember_feedback" && t.stored ? `searchable in ${t.searchable_after_s ?? "–"}s`
+          : t.results ? `${t.results.length} results${t.paths?.length ? ` · ${t.paths.length} paths` : ""} · ${fmtMs(ev.ms)}` : fmtMs(ev.ms);
+        $(".res-n", s).innerHTML = right;
         s.onclick = (e) => { e.stopPropagation(); select(turn); flash(`t-${turn.n}-${ev._i}`); };
       }
     }
     if (ev.name === "generate_creative" && ev.trace.brain) {
-      $(".out", el).insertAdjacentHTML("beforeend", creativeHTML(ev.trace));
+      $(".out", el).insertAdjacentHTML("beforeend", creativeHTML(ev.trace)); icons();
       (ev.trace.brain.decisions || []).forEach((d) => ids(`${d.because} ${d.source}`).forEach((id) => turn.used.add(id)));
     }
-    if (ev.name === "remember_feedback" || ev.name === "promote_skill") loadMemory();
   }
+  const done = ev.type === "answer" || ev.type === "error";
   if (ev.type === "answer") {
     ev.cited.forEach((id) => turn.used.add(id));
     $(".out", el).insertAdjacentHTML("beforeend", `<div class="answer">${md(ev.text)}</div>`);
     history.push({ role: "model", text: ev.text });
   }
-  if (ev.type === "error") $(".out", el).insertAdjacentHTML("beforeend", `<div class="answer" style="color:var(--red)">Error: ${esc(ev.text)}</div>`);
+  if (ev.type === "error") $(".out", el).insertAdjacentHTML("beforeend", `<div class="answer err">Something went wrong: ${esc(ev.text)}</div>`);
+  $(".sum", el).textContent = summarize(turn, done);
+  if (done) { $(".live", el)?.replaceWith(Object.assign(document.createElement("i"), { innerHTML: "" })); const w = $(".work", el); w.querySelector("summary").insertAdjacentHTML("afterbegin", `<i data-lucide="check-circle-2" style="color:var(--ok)"></i>`); w.open = false; icons(); }
   wireCites(el, turn);
   if (current === turn) renderTrace(turn);
   scrollThread();
 }
-
-function wireCites(root, turn) {
-  root.querySelectorAll(".cite").forEach((c) => c.onclick = (e) => { e.stopPropagation(); if (current !== turn) select(turn); highlight(c.dataset.rid); });
-}
+function wireCites(root, turn) { root.querySelectorAll(".cite").forEach((c) => c.onclick = (e) => { e.stopPropagation(); if (current !== turn) select(turn); highlight(c.dataset.rid); }); }
 function scrollThread() { const t = $("#thread"); t.scrollTop = t.scrollHeight; }
 function select(turn) { current = turn; turns.forEach((t) => t.el.classList.toggle("selected", t === turn)); renderTrace(turn); }
-function flash(id) { const c = document.getElementById(id); if (!c) return; c.scrollIntoView({ behavior: "smooth", block: "start" }); c.classList.remove("flash"); void c.offsetWidth; c.classList.add("flash"); }
+function flash(id) { const c = document.getElementById(id); if (!c) return; if ($("#view-chat").classList.contains("no-trace")) $("#traceToggle").click(); c.scrollIntoView({ behavior: "smooth", block: "start" }); c.classList.remove("flash"); void c.offsetWidth; c.classList.add("flash"); }
 function highlight(rid) {
   const row = document.querySelector(`#trace .res[data-rid="${rid}"]`);
   if (!row) return;
+  if ($("#view-chat").classList.contains("no-trace")) $("#traceToggle").click();
   document.querySelectorAll("#trace .res.hl").forEach((r) => r.classList.remove("hl"));
-  row.classList.add("hl");
-  toggleDetail(row, true);
+  row.classList.add("hl"); toggleDetail(row, true);
   row.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
+// ------------------------------------------------------------ trace inspector
 function renderTrace(turn) {
   const results = turn.events.filter((e) => e.type === "tool_result");
   const searches = results.filter((e) => e.trace.results);
@@ -396,55 +611,64 @@ function renderTrace(turn) {
   const used = allRes.filter((r) => turn.used.has(r.rid)).length;
   const hydraMs = searches.reduce((a, e) => a + (e.trace.server_ms || e.trace.wall_ms || 0), 0);
   const paths = searches.reduce((a, e) => a + (e.trace.paths?.length || 0), 0);
-  let h = `<h2>Brain trace · turn ${turn.n}</h2>
-    <div class="tsum">
-      <div><b>${results.length}</b><span>tool calls</span></div>
+  const layers = new Set(searches.map((e) => e.trace.layer));
+  $("#traceTurn").textContent = `· turn ${turn.n}`;
+  let h = `<div class="t-sum">
+      <div><b>${layers.size}/5</b><span>layers searched</span></div>
       <div><b>${searches.length}</b><span>HydraDB queries</span></div>
+      <div><b>${fmtMs(hydraMs)}</b><span>HydraDB time</span></div>
       <div><b>${allRes.length}</b><span>results ranked</span></div>
-      <div><b>${done ? `${used}/${allRes.length}` : "…"}</b><span>used by agent</span></div>
+      <div><b>${done ? used : "…"}</b><span>used by agent</span></div>
       <div><b>${paths}</b><span>graph paths</span></div>
-      <div><b>${fmtMs(hydraMs) || "-"}</b><span>HydraDB time</span></div>
     </div>
-    <div class="legend">Bars = HydraDB relevancy score, scaled within each query (raw score below). <b>✓ bold</b> = cited in the answer or creative. Faded = retrieved but ignored. Click any row for the full memory and what HydraDB inferred.</div>`;
-  if (!results.length) h += `<div class="tempty"><span class="spinner"></span><br>Agent is planning…</div>`;
+    <div class="legend">${Object.values(LAYERS).map((l) => `<span><i class="sw" style="background:var(--L-${l.k})"></i>${l.k} · ${l.name}</span>`).join("")}</div>
+    <div class="t-legend-note">Ranked by HydraDB relevancy. Bold with a green rank = cited by the agent; faded = retrieved but not used. Click a row for the full memory.</div>`;
+  if (!results.length) h += `<div class="tcard"><div class="panel-body"><div class="skeleton" style="width:60%"></div><div class="skeleton"></div><div class="skeleton" style="width:80%"></div></div></div>`;
   for (const ev of results) {
     const call = turn.events[ev._call] || { args: {} };
     const t = ev.trace, id = `t-${turn.n}-${ev._i}`;
     if (t.results) {
-      const F = t.type === "memory", L = (LAYER[t.tool] || ["F"])[0];
-      h += `<div class="tcard" id="${id}"><div class="thead"><span class="tn"><span class="lay ${L}">${esc((LAYER[t.tool] || [, t.layer])[1])}</span> ${esc(t.tool)}</span>
-        <span class="tms">HydraDB ${fmtMs(t.server_ms) || "-"} · round trip ${fmtMs(ev.ms)}</span></div>
-        <div class="params">query: <em>"${esc(t.query)}"</em><br>collection: <em>${esc(t.collection)}</em> · type: <em>${t.type}</em> · query_by: <em>${t.query_by}</em> · mode: <em>${t.mode}</em>${F ? "" : " · graph_context: <em>on</em>"} · max_results: <em>${t.max_results}</em></div>
-        ${t.results.length ? "" : `<div class="caption">No results.</div>`}
-        ${t.results.map((r, _, all) => {
+      const L = BY_TOOL[t.tool] || LAYERS.feedback;
+      const sc = t.results.map((x) => x.score ?? 0), hi = Math.max(...sc, 0), lo = Math.min(...sc, 0);
+      h += `<div class="tcard" id="${id}">
+        <div class="t-top"><span class="lay ${L.k}">${L.name}</span><span class="tn mono">${esc(t.tool)}</span><span class="tms">${fmtMs(t.server_ms)} · ${fmtMs(ev.ms)}</span></div>
+        <dl class="kv"><dt>query</dt><dd class="q">${esc(t.query)}</dd><dt>collection</dt><dd>${esc(t.collection)}</dd><dt>search</dt><dd>${t.type} · ${t.query_by} · ${t.mode}${t.type === "knowledge" ? " · graph on" : ""} · top ${t.max_results}</dd></dl>
+        ${t.results.length ? "" : `<div class="panel-body muted">No results.</div>`}
+        ${t.results.map((r) => {
           const st = done ? (turn.used.has(r.rid) ? "used" : "unused") : "";
-          const sc = all.map((x) => x.score ?? 0), hi = Math.max(...sc), lo = Math.min(...sc);
           const pct = r.score == null ? 0 : hi === lo ? 100 : 12 + 88 * (r.score - lo) / (hi - lo);
-          return `<div class="res ${L} ${st}" data-rid="${r.rid}"><span class="rk">#${r.rank}</span><span class="rid">${r.rid}</span>
-            <span class="ttl">${r.fresh ? `<span class="newtag">NEW</span>` : ""}<span class="kind">${esc(r.kind)}</span>${esc(r.title.replace(/^Tidelight · /, ""))}</span>
-            <span><div class="bar"><i style="width:${pct}%"></i></div><small>${r.score == null ? "-" : r.score.toFixed(3)}</small></span></div>`;
+          return `<div class="res ${L.k} ${st}" data-rid="${r.rid}"><span class="rk">${r.rank}</span><span class="rid">${r.rid}</span>
+            <span class="ttl">${r.fresh ? `<span class="newtag">NEW</span>` : ""}<span class="kind">${esc(r.kind)}</span>${esc(r.title.replace(/^Tidelight · /, "").replace(/^Creative (\S+) · [^:]+: /, "$1 · "))}</span>
+            <span class="score"><span class="bar"><i style="width:${pct}%"></i></span><small>${r.score == null ? "–" : r.score.toFixed(3)}</small></span></div>`;
         }).join("")}
-        ${t.paths?.length ? `<div class="paths"><h5>Graph paths HydraDB followed · BYOG, BrandOS schema</h5>${t.paths.map((p) =>
-          `<div class="path"><span class="n">${esc(p.source)}</span> <span class="p">—${esc(p.predicate)}→</span> <span class="n">${esc(p.target)}</span><small>${esc(p.context || "")}</small></div>`).join("")}</div>` : ""}
+        ${t.paths?.length ? `<div class="paths"><h5><i data-lucide="git-fork"></i>Graph paths followed</h5>${t.paths.map((p) =>
+          `<div class="path"><span class="n">${esc(p.source)}</span><span class="p">${esc(p.predicate)} →</span><span class="n">${esc(p.target)}</span>${p.context ? `<small>${esc(p.context)}</small>` : ""}</div>`).join("")}</div>` : ""}
       </div>`;
     } else if (ev.name === "generate_creative" && t.brain) {
-      h += `<div class="tcard" id="${id}"><div class="thead"><span class="tn">🎨 generate_creative</span><span class="tms">${fmtMs(ev.ms)}</span></div>
-        <div class="params">brief: <em>"${esc(t.brief)}"</em> · placement: <em>${esc(t.placement)}</em><br>context passed to the creative model: <em>${(t.context_ids || []).join(", ") || "none"}</em>${t.plain ? `<br>control: <em>user's original words only, zero memory, no assets</em>` : ""}</div>
-        ${t.brain.assets?.length ? `<div class="assets"><span class="caption">verified assets attached as image references:</span>${t.brain.assets.map((a) => `<img src="${a}" title="${esc(a.split("/").pop())}">`).join("")}</div>` : ""}
-        ${(t.brain.decisions || []).map((d) => { const c = ids(`${d.because} ${d.source}`); return `<div class="dec"><b>${esc(d.decision)}</b> ← ${c.length ? c.map(chip).join("") : `<span class="caption">generic</span>`}</div>`; }).join("")}</div>`;
+      h += `<div class="tcard" id="${id}">
+        <div class="t-top"><i data-lucide="image"></i><span class="tn mono">generate_creative</span><span class="tms">${fmtMs(ev.ms)}</span></div>
+        <dl class="kv"><dt>brief</dt><dd class="q">${esc(t.brief)}</dd><dt>placement</dt><dd>${esc(t.placement)}</dd><dt>context</dt><dd>${(t.context_ids || []).join(", ") || "none"}</dd>${t.plain ? `<dt>control</dt><dd>user's words only · no memory · no assets</dd>` : ""}</dl>
+        ${t.brain.assets?.length ? `<div class="paths"><h5><i data-lucide="badge-check"></i>Verified assets attached</h5><div class="refs">${t.brain.assets.map((a) => `<img src="${a}" alt="">`).join("")}</div></div>` : ""}
+        <div class="paths"><h5><i data-lucide="list-checks"></i>Decisions and their sources</h5>${(t.brain.decisions || []).map((d) => { const c = ids(`${d.because} ${d.source}`);
+          return `<div class="dec"><b>${esc(d.decision)}</b> ${c.length ? c.map(chip).join("") : `<span class="faint">generic</span>`}</div>`; }).join("")}</div>
+      </div>`;
     } else if (ev.name === "remember_feedback" && t.stored) {
-      h += `<div class="tcard" id="${id}"><div class="thead"><span class="tn">🧠 remember_feedback</span><span class="tms">${fmtMs(ev.ms)}</span></div>
-        <div class="params">context.ingest · collection: <em>${esc(t.collection)}</em> · type: <em>memory</em> · infer: <em>true</em> · id: <em>${esc(t.stored.id)}</em></div>
-        <div class="rdetail">“${esc(t.stored.text)}”<br><span class="caption">from ${esc(t.stored.from)} · re ${esc(t.stored.on)}</span></div>
-        <div class="params">ingest acknowledged in <em>${fmtMs(t.ingest_ack_ms)}</em> (queued) → indexed &amp; retrievable after <em>${t.searchable_after_s != null ? t.searchable_after_s + "s" : "not yet"}</em><br>Future searches tag it <span class="newtag">NEW</span> when it comes back.</div></div>`;
+      h += `<div class="tcard" id="${id}">
+        <div class="t-top"><span class="lay F">Client feedback</span><span class="tn mono">remember_feedback</span><span class="tms">${fmtMs(ev.ms)}</span></div>
+        <dl class="kv"><dt>memory</dt><dd class="q">“${esc(t.stored.text)}”</dd><dt>from</dt><dd>${esc(t.stored.from)}</dd><dt>write</dt><dd>context.ingest · ${esc(t.collection)} · memory · infer=true</dd>
+          <dt>ingest ack</dt><dd>${fmtMs(t.ingest_ack_ms)}</dd><dt>searchable</dt><dd>${t.searchable_after_s != null ? t.searchable_after_s + "s after write" : "still indexing"}</dd></dl>
+        <div class="panel-body muted" style="font-size:12px">Future searches tag this memory <span class="newtag">NEW</span> when it is retrieved.</div>
+      </div>`;
     } else {
-      h += `<div class="tcard" id="${id}"><div class="thead"><span class="tn">${esc(LABEL[ev.name] || ev.name)}</span><span class="tms">${fmtMs(ev.ms)}</span></div>
-        <div class="params">args: ${esc(JSON.stringify(call.args))}</div><pre class="params" style="white-space:pre-wrap">${esc(JSON.stringify(t, null, 1).slice(0, 1500))}</pre></div>`;
+      h += `<div class="tcard" id="${id}"><div class="t-top"><i data-lucide="${(ACTION[ev.name] || ["wrench"])[0]}"></i><span class="tn mono">${esc(ev.name)}</span><span class="tms">${fmtMs(ev.ms)}</span></div>
+        <dl class="kv"><dt>args</dt><dd>${esc(JSON.stringify(call.args).slice(0, 300))}</dd></dl>
+        ${t.error ? `<div class="panel-body" style="color:var(--bad)">${esc(t.error)}</div>` : t.skills ? `<div class="paths">${t.skills.map((s) => `<div class="dec"><b>${esc(s.title)}</b> · ${esc(s.description)}</div>`).join("")}</div>` : ""}</div>`;
     }
   }
   $("#trace").innerHTML = h;
   $("#trace").querySelectorAll(".res").forEach((row) => row.onclick = () => toggleDetail(row));
   wireCites($("#trace"), turn);
+  icons();
 }
 function toggleDetail(row, open) {
   const next = row.nextElementSibling;
@@ -454,128 +678,118 @@ function toggleDetail(row, open) {
   row.insertAdjacentHTML("afterend", `<div class="rdetail">${esc(r.text)}${r.inferred ? `<div class="inferred"><b>HydraDB inferred (infer=true)</b>${esc(r.inferred)}</div>` : ""}</div>`);
 }
 
-let freshSkill = null;
-function skillCard(sk, extra = "") {
-  return `<div class="skill ${sk.name === freshSkill ? "new" : ""}"><h4>${esc(sk.title)}
-    ${sk.promoted ? `<span class="tag learned">learned from feedback</span>` : `<span class="tag">manual</span>`}</h4>
-    <div class="caption">${esc(sk.description)}</div><pre>${esc(sk.skill)}</pre>${extra}</div>`;
-}
-async function loadSkills() {
-  const r = await api("/api/skills");
-  $("#skilllist").innerHTML = r.skills.slice().reverse().map((s) => skillCard(s)).join("");
-}
-async function suggest() {
-  $("#suggest").disabled = true;
-  $("#suggestions").innerHTML = `<div class="skill"><span class="spinner"></span></div>`;
-  try {
-    const r = await api("/api/skills/suggest", {});
-    $("#suggestions").innerHTML = `<div class="caption" style="margin-bottom:8px">Read feedback memory from HydraDB in ${r.recall_ms} ms</div>` +
-      r.skills.map((sk, i) => `<div class="skill suggested" data-i="${i}"><h4>${esc(sk.title)} <span class="tag">${sk.evidence.length} corrections</span></h4>
-        <div class="caption">${esc(sk.description)}</div>
-        ${sk.evidence.map((e) => `<div class="ev">${esc(e.text.replace(/^Client feedback /, "").split("Extra context:")[0].trim())}</div>`).join("")}
-        <pre>${esc(sk.skill)}</pre><button class="primary promote">Promote to Skill</button></div>`).join("");
-    document.querySelectorAll(".promote").forEach((btn) => btn.onclick = async () => {
-      const card = btn.closest(".skill"); const sk = r.skills[+card.dataset.i];
-      btn.disabled = true; btn.textContent = "Promoting…";
-      const res = await api("/api/skills/promote", { name: sk.name, title: sk.title, description: sk.description, skill: sk.skill });
-      freshSkill = sk.name;
-      card.outerHTML = skillCard({ ...res.skill, promoted: true },
-        `<details><summary>BrandOS write (AgentSkill node, same Cypher shape, not executed)</summary><pre>${esc(res.brandos_cypher)}</pre></details>`);
-      toast("Skill promoted, every Creative AI run now recalls it");
-      loadSkills();
-    });
-  } catch (e) { $("#suggestions").innerHTML = `<div class="skill">Error: ${esc(e.message).slice(0, 300)}</div>`; }
-  $("#suggest").disabled = false;
-}
-const LAYER_META = {
-  brand: ["B", "Brand book", "Guidelines at brand-book depth: color system, type scale, logo, layout + safe zones, photography, voice, FDA/FTC rule pack, products, skills."],
-  campaigns: ["C", "Campaigns + creatives", "18 months of campaigns with budget, flight, audience, KPI, learnings; every creative joined with ClickHouse daily performance + fatigue."],
-  voice: ["V", "Consumer voice", "Reviews, Reddit threads, TikTok + Instagram comments, with ratings, sentiment and themes."],
-  market: ["M", "Market", "Competitors, pricing, their ad activity, share of voice, category trends, regulation."],
-  feedback: ["F", "Client feedback memory", "Approvals, send-backs, rejections and reactions from brand, legal and performance leads (infer=true)."],
+// ------------------------------------------------------------ brain view
+const TYPE_COLOR = { BRAND: "#0f172a", GUIDELINES: "#3e63dd", PRODUCT: "#d97706", CAMPAIGN: "#7c3aed", AD: "#a78bfa", CREATIVE: "#c4b5fd",
+  CREATIVEARCHETYPE: "#6d28d9", CONSUMER: "#99d5cc", REVIEWTHEME: "#0e8a7d", PLATFORM: "#14b8a6", COMPETITOR: "#b45309",
+  CATEGORYTREND: "#d97706", SHAREOFVOICE: "#f59e0b", AGENTSKILL: "#18794e", ORGMEMORY: "#4ade80", PRODUCTGUIDELINES: "#93a8ef" };
+const LAYER_DESC = {
+  brand: "Color system, type scale, logo, layout + safe zones, photography, voice, FDA/FTC rule pack, products, skills",
+  campaigns: "8 campaigns over 18 months; every creative joined with daily performance and fatigue",
+  voice: "Reviews, Reddit threads, TikTok + Instagram comments with rating, sentiment, theme",
+  market: "Competitors, pricing, ad activity, share of voice, category trends",
+  feedback: "Approvals, send-backs and rejections from brand, legal and performance (infer=true)",
 };
-const TYPE_COLOR = { BRAND: "#4a2c1d", GUIDELINES: "#2b5c8a", PRODUCT: "#c8a04a", CAMPAIGN: "#5b3a8a", AD: "#9b86c4", CREATIVE: "#b9a8dc",
-  CREATIVEARCHETYPE: "#7a5fb0", CONSUMER: "#9fd3c7", REVIEWTHEME: "#1f6f5c", PLATFORM: "#3d9b85", COMPETITOR: "#8a3b2b",
-  CATEGORYTREND: "#c4775f", SHAREOFVOICE: "#d9a08f", AGENTSKILL: "#2f7d4f", ORGMEMORY: "#6fa37f", PRODUCTGUIDELINES: "#e0c27a" };
-let brainData = null, net = null, recLayer = "brand";
-async function loadMemory() { if ($("#view-brain") && !$("#view-brain").classList.contains("hidden")) loadBrain(); }
+let net = null, recLayer = "brand", gFilter = new Set(["brand", "campaigns", "market"]);
 async function loadBrain() {
-  const d = brainData = await api("/api/brain");
-  const st = d.stats, L = d.layers;
+  if (!brainData) brainData = await api("/api/brain");
+  const d = brainData, st = d.stats, L = d.layers;
   const total = Object.values(L).reduce((a, l) => a + l.count, 0);
-  $("#bsub").textContent = `HydraDB database "${d.database}" · ${d.brand.display_name}, ${d.brand.hq} (fictional) · ${d.brand.category} · ${d.brand.channels.join(", ")}`;
-  $("#bkpis").innerHTML = [
-    [total, "records in the brain"], [st.graph_relations, "graph relationships"], [st.campaigns + " / " + st.creatives, "campaigns / creatives"],
-    ["$" + (st.ad_spend / 1000).toFixed(0) + "k", `ad spend · ${st.ad_daily_rows.toLocaleString()} daily rows`],
-    [Object.values(st.voice_by_platform).reduce((a, b) => a + b, 0), `consumer posts · ${Object.keys(st.voice_by_platform).length} platforms`],
-    [st.voice_range[0].slice(0, 7) + " → " + st.voice_range[1].slice(0, 7), "time span"],
-  ].map(([b, s]) => `<div><b>${b}</b><span>${s}</span></div>`).join("");
-  $("#blayers").innerHTML = Object.entries(L).map(([k, l]) => `<div class="layer ${k === recLayer ? "on" : ""}" data-l="${k}"><span class="lay ${LAYER_META[k][0]}">${LAYER_META[k][1]}</span>
-    <b>${l.count}</b><code>${l.collection}${l.relations ? ` · ${l.relations} graph links` : " · memory"}</code><p>${LAYER_META[k][2]}</p></div>`).join("");
-  document.querySelectorAll(".layer").forEach((el) => el.onclick = () => { recLayer = el.dataset.l; document.querySelectorAll(".layer").forEach((x) => x.classList.toggle("on", x === el)); renderRecords(); });
-  const vp = Object.entries(st.voice_by_platform).sort((a, b) => b[1] - a[1]), vmax = vp[0][1];
-  const sentBy = {};
-  L.voice.samples.forEach((it) => { const m = it.body.match(/^(\S+) \w+ by .*?sentiment (\w+)/); if (m) { (sentBy[m[1]] ||= { positive: 0, negative: 0, mixed: 0, neutral: 0 })[m[2]]++; } });
-  $("#bsources").innerHTML = vp.map(([p, n]) => { const s = sentBy[p] || {}; const seg = (k, c) => `<i style="width:${100 * (s[k] || 0) / vmax}%;background:${c}"></i>`;
-    return `<div class="hbar"><span>${esc(p)}</span><span class="track">${seg("positive", "#3d9b85")}${seg("mixed", "#e0c27a")}${seg("negative", "#c4775f")}</span><small>${n}</small></div>`; }).join("") +
-    `<div class="caption" style="margin-top:6px">■ positive ■ mixed ■ negative · sentiment overall ${Object.entries(st.voice_by_sentiment).map(([k, v]) => `${k} ${v}`).join(", ")}</div>`;
+  $("#bsub").textContent = `${d.brand.display_name} · ${d.brand.category} · ${d.brand.hq} · ${d.brand.channels.join(", ")} · HydraDB database ${d.database}`;
+  $("#bstats").innerHTML = [[total.toLocaleString(), "records in memory"], [st.graph_relations.toLocaleString(), "graph relationships"],
+    [`$${Math.round(st.ad_spend / 1000)}k`, `ad spend across ${st.ad_daily_rows.toLocaleString()} daily rows`], [`${st.campaigns} / ${st.creatives}`, "campaigns / creatives"],
+    [Object.values(st.voice_by_platform).reduce((a, b) => a + b, 0), `consumer posts from ${Object.keys(st.voice_by_platform).length} platforms`],
+    [(() => { const [a, b] = st.voice_range.map((x) => new Date(x + "T00:00:00")); return `${Math.round((b - a) / 2.63e9)} mo`; })(),
+     st.voice_range.map((x) => new Date(x + "T00:00:00").toLocaleDateString("en-US", { month: "short", year: "numeric" })).join(" – ")]].map(([b, s]) => `<div><b>${b}</b><span>${s}</span></div>`).join("");
+  $("#blayers").innerHTML = `<tr><th>Layer</th><th>Collection</th><th class="r">Records</th><th class="r">Graph links</th><th>What's inside</th></tr>` +
+    Object.entries(L).map(([k, l]) => `<tr class="click ${k === recLayer ? "sel" : ""}" data-l="${k}"><td><span class="lay ${LAYERS[k].k}">${LAYERS[k].name}</span></td>
+      <td class="mono">${l.collection}</td><td class="r num"><b>${l.count}</b></td><td class="r num">${l.relations || "–"}</td><td>${LAYER_DESC[k]}</td></tr>`).join("");
+  document.querySelectorAll("#blayers tr.click").forEach((tr) => tr.onclick = () => { recLayer = tr.dataset.l; document.querySelectorAll("#blayers tr.click").forEach((x) => x.classList.toggle("sel", x === tr)); renderRecords(); $("#recordsPanel").scrollIntoView({ behavior: "smooth" }); });
+  const vp = Object.entries(st.voice_by_platform).sort((a, b) => b[1] - a[1]), vmax = vp[0][1], sentBy = {};
+  L.voice.samples.forEach((it) => { const m = it.body.match(/^(\S+) \w+ by .*?sentiment (\w+)/); if (m) (sentBy[m[1]] ||= { positive: 0, negative: 0, mixed: 0, neutral: 0 })[m[2]]++; });
+  const seg = (s, k, c) => `<i style="width:${100 * (s[k] || 0) / vmax}%;background:${c}"></i>`;
+  $("#bsources").innerHTML = vp.map(([p, n]) => { const s = sentBy[p] || {}; return `<div class="hbar"><span>${esc(p)}</span><span class="track">${seg(s, "positive", "#3fae8f")}${seg(s, "mixed", "#e9b949")}${seg(s, "neutral", "#cbd5e1")}${seg(s, "negative", "#e5484d")}</span><small>${n}</small></div>`; }).join("") +
+    `<div class="keyrow"><span><i style="background:#3fae8f"></i>positive ${st.voice_by_sentiment.positive || 0}</span><span><i style="background:#e9b949"></i>mixed ${st.voice_by_sentiment.mixed || 0}</span><span><i style="background:#e5484d"></i>negative ${st.voice_by_sentiment.negative || 0}</span></div>`;
   const sov = [["tidelight", d.sov], ...d.competitors.map((c) => [c.competitor_name, c.share_of_voice])].sort((a, b) => b[1] - a[1]);
-  $("#bsov").innerHTML = sov.map(([n, v]) => `<div class="hbar"><span>${esc(n)}</span><span class="track"><i style="width:${v * 250}%;background:${n === "tidelight" ? "var(--gold)" : "#b9a68c"}"></i></span><small>${Math.round(v * 100)}%</small></div>`).join("") +
-    `<div class="caption" style="margin-top:6px">${d.competitors.map((c) => `<b>${esc(c.competitor_name)}</b>: ${esc(c.competing_front)}`).join("<br>")}</div>`;
+  $("#bsov").innerHTML = sov.map(([n, v]) => `<div class="hbar"><span>${n === "tidelight" ? "<b>tidelight</b>" : esc(n)}</span><span class="track"><i style="width:${v * 250}%;background:${n === "tidelight" ? "var(--accent)" : "#cbd5e1"}"></i></span><small>${Math.round(v * 100)}%</small></div>`).join("") +
+    `<div class="keyrow" style="display:block;line-height:1.6">${d.competitors.map((c) => `<div><b style="color:var(--ink-2)">${esc(c.competitor_name)}</b> · ${esc(c.competing_front)}</div>`).join("")}</div>`;
   const rmax = Math.max(...d.campaigns.map((c) => c.roas), 4);
-  $("#bcamps").innerHTML = `<table class="camps"><tr><th>Campaign</th><th>Flight</th><th>Channels</th><th>Product</th><th>Spend</th><th>ROAS vs target</th><th>Creatives</th></tr>` +
+  $("#bcamps").innerHTML = `<tr><th>Campaign</th><th>Flight</th><th>Channels</th><th>Product</th><th class="r">Spend</th><th>ROAS vs target</th><th></th><th class="r">Creatives</th></tr>` +
     d.campaigns.map((c) => { const tgt = parseFloat((c.kpi.match(/ROAS ([\d.]+)/) || [])[1]); const ok = !tgt || c.roas >= tgt;
-      return `<tr><td><b>${esc(c.name)}</b></td><td>${c.flight[0]} → ${c.flight[1]}</td><td>${c.platforms.join(", ")}</td><td>${esc(c.product)}</td><td>$${(c.spend / 1000).toFixed(0)}k</td>
-      <td><span class="roasbar"><i style="width:${100 * c.roas / rmax}%;background:${ok ? "var(--green)" : "var(--red)"}"></i>${tgt ? `<u style="left:${100 * tgt / rmax}%"></u>` : ""}</span>${c.roas.toFixed(2)}x${tgt ? ` <span class="caption">/ ${tgt}</span>` : ` <span class="caption">${esc(c.kpi)}</span>`}</td>
-      <td>${c.creatives}${c.fatigued ? ` <span class="caption">· ${c.fatigued} fatiguing</span>` : ""}</td></tr>`; }).join("") + `</table>`;
-  renderRecords(); renderGraph();
+      return `<tr><td><b>${esc(c.name)}</b></td><td class="num">${c.flight[0]} → ${c.flight[1]}</td><td>${c.platforms.join(", ")}</td><td>${esc(c.product)}</td><td class="r num">$${Math.round(c.spend / 1000)}k</td>
+        <td><span class="roas"><span class="rb"><i style="width:${100 * c.roas / rmax}%;background:${ok ? "var(--ok)" : "var(--bad)"}"></i>${tgt ? `<u style="left:${100 * tgt / rmax}%"></u>` : ""}</span><span class="num">${c.roas.toFixed(2)}x</span><span class="faint num">${tgt ? `/ ${tgt}` : ""}</span></span></td>
+        <td>${tgt ? `<span class="pill ${ok ? "ok" : "bad"}">${ok ? "Beat target" : "Missed"}</span>` : `<span class="pill neutral">${esc(c.kpi)}</span>`}</td>
+        <td class="r num">${c.creatives}${c.fatigued ? ` <span class="pill warn">${c.fatigued} fatiguing</span>` : ""}</td></tr>`; }).join("");
+  renderRecords(); renderGraph(); icons();
 }
 function renderRecords() {
   const l = brainData.layers[recLayer], q = ($("#rsearch").value || "").toLowerCase();
   const rs = l.samples.filter((r) => !q || (r.title + r.body).toLowerCase().includes(q));
-  $("#rtitle").innerHTML = `<span class="lay ${LAYER_META[recLayer][0]}">${LAYER_META[recLayer][1]}</span> records · ${rs.length}`;
-  $("#records").innerHTML = rs.slice(0, 60).map((r) => `<div class="rec"><b>${esc(r.title)}</b> <span class="caption">${esc(r.provider)}${r.ts ? " · " + r.ts : ""}</span><pre>${esc(r.body)}</pre></div>`).join("");
+  $("#rtitle").innerHTML = `<span class="lay ${LAYERS[recLayer].k}">${LAYERS[recLayer].name}</span> <span class="muted" style="font-weight:400">${rs.length} records</span>`;
+  $("#records").innerHTML = rs.slice(0, 60).map((r) => `<div class="rec"><div class="rec-top"><b>${esc(r.title)}</b><span class="muted">${esc(r.provider)}${r.ts ? " · " + r.ts : ""}</span></div><pre>${esc(r.body)}</pre></div>`).join("") || `<div class="panel-body muted">No records match "${esc(q)}".</div>`;
 }
-let gFilter = new Set(["brand", "campaigns", "market", "feedback"]);
+$("#rsearch").oninput = () => brainData && renderRecords();
 function renderGraph() {
   const g = brainData.graph;
-  const layersAll = ["brand", "campaigns", "voice", "market"];
-  $("#gfilters").innerHTML = layersAll.map((l) => `<button class="${gFilter.has(l) ? "on" : ""}" data-l="${l}">${LAYER_META[l][1]}</button>`).join("");
+  $("#gfilters").innerHTML = ["brand", "campaigns", "voice", "market"].map((l) => `<button class="${gFilter.has(l) ? "on" : ""}" data-l="${l}">${LAYERS[l].name}</button>`).join("");
   document.querySelectorAll("#gfilters button").forEach((b) => b.onclick = () => { gFilter.has(b.dataset.l) ? gFilter.delete(b.dataset.l) : gFilter.add(b.dataset.l); renderGraph(); });
   const keep = new Set(g.nodes.filter((n) => gFilter.has(n.layer) || n.type === "BRAND" || n.type === "PRODUCT").map((n) => n.id));
   const edges = g.edges.filter((e) => keep.has(e.from) && keep.has(e.to));
-  const used = new Set(edges.flatMap((e) => [e.from, e.to]));
-  const nodes = g.nodes.filter((n) => used.has(n.id)).map((n) => ({ id: n.id, label: n.type === "CONSUMER" ? "" : n.label.slice(0, 28), title: `${n.type}: ${n.label}`,
-    color: TYPE_COLOR[n.type] || "#999", shape: "dot", size: n.type === "BRAND" ? 26 : n.type === "PRODUCT" || n.type === "CAMPAIGN" ? 14 : n.type === "CONSUMER" ? 4 : 8,
-    font: { size: 11, color: "#4a2c1d" } }));
-  $("#gcount").textContent = `${nodes.length} nodes · ${edges.length} relationships shown`;
-  if (!window.vis) { $("#graph").innerHTML = `<div class="tempty">Graph library failed to load.</div>`; return; }
+  const usedN = new Set(edges.flatMap((e) => [e.from, e.to]));
+  const nodes = g.nodes.filter((n) => usedN.has(n.id)).map((n) => ({ id: n.id, label: n.type === "CONSUMER" ? "" : n.label.slice(0, 26), title: `${n.type}: ${n.label}`,
+    color: { background: TYPE_COLOR[n.type] || "#94a3b8", border: "#ffffff", highlight: { background: "#3e63dd", border: "#ffffff" } }, borderWidth: 1.5, shape: "dot",
+    size: n.type === "BRAND" ? 22 : n.type === "PRODUCT" || n.type === "CAMPAIGN" ? 12 : n.type === "CONSUMER" ? 4 : 7, font: { size: 11, color: "#334155", face: "Inter" } }));
+  $("#gcount").textContent = `${nodes.length} nodes · ${edges.length} relationships`;
+  if (!window.vis) { $("#graph").innerHTML = `<div class="t-empty">Graph library didn't load (offline?).</div>`; return; }
   net && net.destroy();
-  net = new vis.Network($("#graph"), { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges.map((e, i) => ({ id: i, from: e.from, to: e.to, title: e.type, color: { color: "#d8cfc2" }, width: 0.6 }))) },
-    { physics: { stabilization: { iterations: 150 }, barnesHut: { gravitationalConstant: -6000, springLength: 90 } }, interaction: { hover: true, tooltipDelay: 80 } });
+  net = new vis.Network($("#graph"), { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges.map((e, i) => ({ id: i, from: e.from, to: e.to, title: e.type, color: { color: "#d5dae2", highlight: "#3e63dd" }, width: .7 }))) },
+    { physics: { stabilization: { iterations: 160 }, barnesHut: { gravitationalConstant: -5500, springLength: 95 } }, interaction: { hover: true, tooltipDelay: 80 } });
   net.on("click", (p) => { if (!p.nodes.length) return; const id = p.nodes[0];
-    const rel = g.edges.filter((e) => e.from === id || e.to === id).slice(0, 14).map((e) => `${e.from === id ? "→" : "←"} <b>${esc(e.type)}</b> ${esc((e.from === id ? e.to : e.from).split(":").slice(1).join(":"))}`);
-    $("#ginfo").innerHTML = `<b>${esc(id)}</b> · ${rel.length} connections<br>${rel.join("<br>")}`; });
-}
-async function loadStatus() {
-  const s = await api("/api/status");
-  const b = $("#mode");
-  b.textContent = s.mode === "hydradb" ? "Memory: HydraDB" : "Memory: local fallback";
-  b.className = "badge " + s.mode;
+    const rel = g.edges.filter((e) => e.from === id || e.to === id).slice(0, 12).map((e) => `${e.from === id ? "→" : "←"} <b>${esc(e.type)}</b> ${esc((e.from === id ? e.to : e.from).split(":").slice(1).join(":"))}`);
+    $("#ginfo").innerHTML = `<b>${esc(id.split(":").slice(1).join(":"))}</b> <span class="pill neutral">${esc(id.split(":")[0])}</span> · ${rel.length} relationships<br>${rel.join(" &nbsp; ")}`; });
 }
 
-document.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => {
-  document.querySelectorAll(".tabs button").forEach((x) => x.classList.toggle("on", x === b));
-  ["chat", "skills", "brain"].forEach((t) => $(`#view-${t}`).classList.toggle("hidden", b.dataset.tab !== t));
-  if (b.dataset.tab === "skills") loadSkills();
-  if (b.dataset.tab === "brain") loadBrain();
-});
-document.querySelectorAll(".suggest button").forEach((b) => b.onclick = () => send(b.textContent));
-$("#send").onclick = () => { const v = $("#input").value; $("#input").value = ""; send(v); };
-$("#input").onkeydown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("#send").click(); } };
+// ------------------------------------------------------------ skills
+let freshSkill = null;
+function skillRow(sk, extra = "") {
+  return `<div class="skill ${sk.name === freshSkill ? "fresh" : ""}"><div class="skill-top"><i data-lucide="${sk.promoted ? "sparkles" : "file-text"}" style="color:${sk.promoted ? "var(--accent)" : "var(--muted)"}"></i><b>${esc(sk.title)}</b>
+    ${sk.promoted ? `<span class="pill ok">Learned from feedback</span>` : `<span class="pill neutral">Manual</span>`}<div class="grow"></div><span class="pill ok">Active</span></div>
+    <p>${esc(sk.description)}</p><pre>${esc(sk.skill)}</pre>${extra}</div>`;
+}
+async function loadSkills() {
+  const r = await api("/api/skills");
+  $("#skillcount").textContent = `${r.skills.length} skills`;
+  $("#skilllist").innerHTML = r.skills.slice().reverse().map((s) => skillRow(s)).join("");
+  icons();
+}
+async function suggest() {
+  $("#suggest").disabled = true;
+  $("#suggestions").innerHTML = `<div class="panel"><div class="panel-head"><span class="spin-sm"></span><h3>Reading client feedback memory…</h3></div><div class="panel-body"><div class="skeleton" style="width:40%"></div><div class="skeleton"></div><div class="skeleton" style="width:70%"></div></div></div>`;
+  try {
+    const r = await api("/api/skills/suggest", {});
+    $("#suggestions").innerHTML = `<div class="panel"><div class="panel-head"><i data-lucide="sparkles" style="color:var(--accent)"></i><h3>Proposed skills</h3><span class="muted">From ${r.skills.reduce((a, s) => a + s.evidence.length, 0)} feedback memories · read in ${r.recall_ms}ms</span></div>` +
+      r.skills.map((sk, i) => `<div class="skill suggested" data-i="${i}"><div class="skill-top"><b>${esc(sk.title)}</b><span class="pill neutral">${sk.evidence.length} corrections</span><div class="grow"></div><button class="btn primary promote"><i data-lucide="arrow-up-circle"></i>Promote</button></div>
+        <p>${esc(sk.description)}</p>
+        ${sk.evidence.slice(0, 3).map((e) => { const m = e.text.split("Extra context:")[0].trim().match(/^Client feedback \[(\w+)\] from (.+?) \(re: [^)]*\)+:?\s*(.*)$/s);
+          return `<div class="ev">${m ? `<b>${esc(m[2])} · ${esc(m[1])}</b> “${esc(m[3].slice(0, 220))}”` : esc(e.text.slice(0, 240))}</div>`; }).join("")}
+        <pre>${esc(sk.skill)}</pre></div>`).join("") + `</div>`;
+    icons();
+    document.querySelectorAll(".promote").forEach((btn) => btn.onclick = async () => {
+      const card = btn.closest(".skill"); const sk = r.skills[+card.dataset.i];
+      btn.disabled = true; btn.innerHTML = `<span class="spin-sm"></span>Promoting`;
+      const res = await api("/api/skills/promote", { name: sk.name, title: sk.title, description: sk.description, skill: sk.skill });
+      freshSkill = sk.name;
+      card.remove();
+      toast(`"${sk.title}" is now active for every Creative AI run`);
+      loadSkills();
+    });
+  } catch (e) { $("#suggestions").innerHTML = `<div class="panel"><div class="panel-body" style="color:var(--bad)">Couldn't propose skills: ${esc(e.message).slice(0, 200)}</div></div>`; }
+  $("#suggest").disabled = false;
+}
 $("#suggest").onclick = suggest;
-$("#rsearch").oninput = () => brainData && renderRecords();
-loadStatus(); loadMemory();
+
+if (matchMedia("(max-width: 860px)").matches) { $("#view-chat").classList.add("no-trace"); $("#traceToggle").classList.remove("on"); }
+icons();
+loadShell();
 </script>
 </body>
 </html>

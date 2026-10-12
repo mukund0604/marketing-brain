@@ -99,7 +99,9 @@ def _kind_of(title, layer):
     if layer == "feedback":
         return "client feedback"
     m = re.match(r"Tidelight · ([^:]+?)(?::|$)", title)
-    k = (m.group(1) if m else layer).strip()
+    k = (m.group(1) if m else layer).split(" · ")[0].strip()
+    if k.startswith(("Creative ", "Campaign")):
+        return k.split()[0].lower()  # "creative" / "campaign"; the id and product live in the title
     if layer == "voice" and not k.startswith("ReviewTheme"):
         return k.split()[0]  # platform: amazon / reddit / tiktok ...
     return {"Guidelines hub": "guidelines", "AgentSkill": "skill", "Org memory": "org memory", "ReviewTheme": "theme",
