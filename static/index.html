@@ -858,7 +858,7 @@ const NT = {  // graph node type -> [display, layer color key, size, entity type
 const SECTION_T = new Set(["COLORPALETTE", "TYPOGRAPHY", "LOGOUSAGE", "LAYOUTSYSTEM", "VISUALIDENTITY", "TONEOFVOICE", "COMPLIANCERULES", "CREATIVEARCHETYPES", "BRANDAMBASSADOR"]);
 const nt = (t) => NT[SECTION_T.has(t) ? "SECTION" : t] || ["Entity", "B", 9];
 const HEX = { ink: ["#0f172a", "#0f172a"], B: ["#3e63dd", "#dfe6fb"], C: ["#7c3aed", "#ebe2fd"], V: ["#0e8a7d", "#d3efeb"], M: ["#b45309", "#fbe6cc"] };
-let X = null, G = null, xnet = null, xN = null, xE = null, xExpanded = new Set(), xSel = null, xTrail = [];
+let X = null, G = null, xnet = null, xN = null, xE = null, xExpanded = new Set(), xSel = null, xTrail = [], xPhysics = false, xBrandId = null;
 function entKey(n) {
   const e = nt(n.type)[3]; if (!e) return null;
   let name = n.label;
@@ -886,7 +886,7 @@ function visNode(n, extra = {}) {
   if (n.type === "REVIEWTHEME" && e) name = `${n.label} (${e.metrics[0][1]})`;
   if (e?.weight) size = Math.min(26, size + Math.sqrt(e.weight));
   const ring = e?.status ? RING[e.status] : "#ffffff";
-  const pos = extra._near ? (() => { const p = xnet?.getPositions([extra._near])[extra._near]; return p ? { x: p.x + (Math.random() - .5) * 160, y: p.y + (Math.random() - .5) * 160 } : {}; })() : {};
+  const pos = {};
   delete extra._near;
   return { id: n.id, label: n.type === "CONSUMER" ? "" : (name.length > 34 ? name.slice(0, 33) + "…" : name), title: `${label}: ${e ? e.name + (e.signal ? " · " + e.signal : "") : n.label}`, shape: "dot", size, ...pos,
     color: { background: c, border: ring, highlight: { background: c, border: e?.status ? ring : "#0f172a" }, hover: { background: c, border: e?.status ? ring : "#0f172a" } }, borderWidth: e?.status ? 4 : 2, borderWidthSelected: e?.status ? 5 : 3,
@@ -895,8 +895,33 @@ function visNode(n, extra = {}) {
 function addEdge(a, b, type) { const id = `${a}>${type}>${b}`; if (!xE.get(id)) xE.add({ id, from: a, to: b, title: type, label: type || " ", font: { size: 0 } }); }
 let xHubs = {};
 const PLURAL = { PRODUCT: "Products", CAMPAIGN: "Campaigns", REVIEWTHEME: "Review themes", COMPETITOR: "Competitors", CATEGORYTREND: "Category trends", AGENTSKILL: "Agent skills", ORGMEMORY: "Org memory" };
+let xAdded = [];
+function addNear(o, parentId) {  // add a node outside an expand, placed next to its parent so nothing jumps
+  if (xN.get(o.id)) return;
+  xN.add(visNode(o));
+  if (parentId && xN.get(parentId)) placeAround(parentId, [o.id]);
+}
+function placeAround(parentId, ids) {
+  // deterministic radial placement: fan new nodes outward, away from the brand, so nothing else moves
+  if (!ids.length || !xnet) return;
+  const P = xnet.getPositions([parentId, xBrandId]); const p = P[parentId], c = P[xBrandId] || { x: 0, y: 0 };
+  if (!p) return;
+  const fromCenter = parentId === xBrandId || (Math.abs(p.x - c.x) + Math.abs(p.y - c.y) < 1);
+  const base = fromCenter ? -Math.PI / 2 : Math.atan2(p.y - c.y, p.x - c.x);
+  const arc = fromCenter ? Math.PI * 2 : Math.min(Math.PI * 1.5, Math.max(Math.PI * .6, ids.length * .42));
+  const R = 150 + Math.max(0, ids.length - 6) * 14;
+  xN.update(ids.map((nid, i) => { const a = fromCenter ? base + arc * i / ids.length : base - arc / 2 + arc * (i + .5) / ids.length;
+    return { id: nid, x: p.x + R * Math.cos(a), y: p.y + R * Math.sin(a) }; }));
+}
 function expand(id) {
   if (xExpanded.has(id)) return; xExpanded.add(id);
+  xAdded = [];
+  const _add = xN.add.bind(xN);
+  xN.add = (n) => { const r = _add(n); (Array.isArray(n) ? n : [n]).forEach((x) => xAdded.push(x.id)); return r; };
+  try { expandInner(id); } finally { xN.add = _add; }
+  if (xnet && !xPhysics) placeAround(id, xAdded);
+}
+function expandInner(id) {
   if (id.startsWith("HUB:")) {  // fan out a group's members
     xHubs[id].forEach(({ o, type }) => { if (!xN.get(o.id)) xN.add(visNode(o, { _near: id })); addEdge(id, o.id, type); });
     return count();
@@ -936,7 +961,7 @@ function expand(id) {
 function count() { $("#xcount").textContent = `${xN.length} on canvas · ${G.nodes.length} entities in the brain`; }
 function resetGraph() {
   xExpanded = new Set(); xHubs = {}; xTrail = []; xN = new vis.DataSet(); xE = new vis.DataSet();
-  const brand = G.nodes.find((n) => n.type === "BRAND");
+  const brand = G.nodes.find((n) => n.type === "BRAND"); xBrandId = brand.id;
   xN.add(visNode(brand));
   expand(brand.id);
   xnet && xnet.destroy();
@@ -948,9 +973,10 @@ function resetGraph() {
   });
   xnet.on("click", (p) => { if (p.nodes.length) selectNode(p.nodes[0]); });
   // fit once the layout has actually settled (fitting earlier leaves the graph tiny)
-  const settleFit = () => xnet.fit({ animation: { duration: 400, easingFunction: "easeOutQuad" } });
-  xnet.once("stabilized", settleFit);
-  setTimeout(settleFit, 1600);
+  xPhysics = true;
+  const settle = () => { if (!xPhysics) return; xPhysics = false; xnet.setOptions({ physics: false }); xnet.fit({ animation: { duration: 400, easingFunction: "easeOutQuad" } }); };
+  xnet.once("stabilized", settle);
+  setTimeout(settle, 1800);
   selectNode(brand.id, false);
 }
 function nodeTitle(id) {
@@ -981,7 +1007,11 @@ function selectNode(id, grow = true) {
   xE.update(xE.get().map((e) => { const on = showLabels && (e.from === id || e.to === id); return { id: e.id, label: e.title || " ", font: { size: on ? 10 : 0 } }; }));
   focusDim(id);
   xnet.selectNodes([id]);
-  if (grow) setTimeout(() => xnet.focus(id, { scale: Math.max(xnet.getScale(), .85), animation: { duration: 450, easingFunction: "easeOutQuad" } }), 250);
+  if (grow) {  // keep the camera still; only nudge if the clicked node's new neighbours fall off-screen
+    const box = $("#xgraph").getBoundingClientRect(), ids = [id, ...xAdded];
+    const off = ids.some((nid) => { const pp = xnet.getPositions([nid])[nid]; if (!pp) return false; const d = xnet.canvasToDOM(pp); return d.x < 20 || d.y < 70 || d.x > box.width - 20 || d.y > box.height - 40; });
+    if (off) xnet.fit({ nodes: ids, minZoomLevel: .3, maxZoomLevel: Math.max(xnet.getScale(), .6), animation: { duration: 350, easingFunction: "easeOutQuad" } });
+  }
   renderDrawer(id);
 }
 function renderDrawer(id) {
@@ -991,7 +1021,7 @@ function renderDrawer(id) {
     $("#xprofile").innerHTML = `<div class="prof-inner"><div class="prof-head"><span class="prof-ic" style="background:var(--L-${L}-soft);color:var(--L-${L})"><i data-lucide="layers"></i></span>
       <div><h1>${list.length} ${PLURAL[t]}</h1><p>Tidelight · click one to open it</p></div></div>
       <div class="panel"><table class="tbl">${rows.map(({ o, e }) => `<tr class="click" data-n="${esc(o.id)}"><td><b>${esc(o.label)}</b>${e ? `<div class="muted" style="font-size:11.5px">${esc(e.subtitle)}</div>` : ""}</td><td class="r num">${e ? `<span class="${e.status === "bad" ? "" : ""}">${esc(e.signal || "")}</span>` : ""}</td></tr>`).join("")}</table></div></div>`;
-    $("#xprofile").querySelectorAll("[data-n]").forEach((b) => b.onclick = () => { const o = G.byId[b.dataset.n]; if (!xN.get(o.id)) { xN.add(visNode(o)); addEdge(id, o.id, ""); } selectNode(o.id); });
+    $("#xprofile").querySelectorAll("[data-n]").forEach((b) => b.onclick = () => { const o = G.byId[b.dataset.n]; if (!xN.get(o.id)) { addNear(o, id); addEdge(id, o.id, ""); } selectNode(o.id); });
     $("#xprofile").scrollTop = 0; return icons();
   }
   const n = G.byId[id] || (id.startsWith("CONSUMERS:") ? { type: "CONSUMERS", label: "Consumers" } : null);
@@ -1008,7 +1038,7 @@ function renderDrawer(id) {
     ${body ? `<div class="panel"><div class="panel-head"><h3>${n.type === "BRAND" ? "Who they are" : "What the brain holds"}</h3></div><div class="panel-body ptext" style="max-height:340px;overflow:auto">${esc(body.slice(0, 1600))}</div></div>` : ""}
     <div class="panel"><div class="panel-head"><h3>Connections</h3><span class="muted">click to open</span></div><div class="panel-body">${Object.entries(rel).map(([t, list]) =>
       `<div style="margin-bottom:10px"><div class="mono muted" style="margin-bottom:4px">${esc(t)} · ${list.length}</div><div class="links" style="margin:0">${list.filter((o) => o.type !== "CONSUMER").slice(0, 12).map((o) => `<button class="elink" data-n="${esc(o.id)}">${esc(o.label.replace(/^(ad|creative) /, "").slice(0, 34))}</button>`).join("")}${list.some((o) => o.type === "CONSUMER") ? `<span class="muted" style="font-size:12px">${list.filter((o) => o.type === "CONSUMER").length} consumers</span>` : ""}</div></div>`).join("")}</div></div></div>`;
-  $("#xprofile").querySelectorAll("[data-n]").forEach((b) => b.onclick = () => { const o = G.byId[b.dataset.n]; if (!xN.get(o.id)) xN.add(visNode(o)); selectNode(o.id); });
+  $("#xprofile").querySelectorAll("[data-n]").forEach((b) => b.onclick = () => { const o = G.byId[b.dataset.n]; if (!xN.get(o.id)) { addNear(o, id); addEdge(id, o.id, ""); } selectNode(o.id); });
   $("#xprofile").scrollTop = 0; icons();
 }
 $("#xreset").onclick = () => G && resetGraph();
@@ -1016,7 +1046,7 @@ const zoomBy = (f) => xnet && xnet.moveTo({ scale: Math.min(3, Math.max(.04, xne
 $("#xzin").onclick = () => zoomBy(1.3);
 $("#xzout").onclick = () => zoomBy(1 / 1.3);
 $("#xzfit").onclick = () => xnet && xnet.fit({ animation: { duration: 300, easingFunction: "easeOutQuad" } });
-$("#xq").onchange = () => { const v = $("#xq").value.trim().toLowerCase(); const m = G && G.nodes.find((n) => n.label.toLowerCase() === v); if (m) { $("#xq").value = ""; if (!xN.get(m.id)) xN.add(visNode(m)); selectNode(m.id); } };
+$("#xq").onchange = () => { const v = $("#xq").value.trim().toLowerCase(); const m = G && G.nodes.find((n) => n.label.toLowerCase() === v); if (m) { $("#xq").value = ""; addNear(m, xSel); selectNode(m.id); } };
 function graphIdFor(key) {  // entity key -> graph node id
   const [t, ...rest] = key.split(":"); const name = rest.join(":");
   const map = { product: `PRODUCT:${name}`, campaign: `CAMPAIGN:${name}`, archetype: `CREATIVEARCHETYPE:${name}`, theme: `REVIEWTHEME:${name}`, competitor: `COMPETITOR:${name}`, platform: `PLATFORM:${name}`, creative: `CREATIVE:creative ${name}` };
@@ -1046,7 +1076,7 @@ function renderProfile(key, nodeId) {
     <div class="stats">${e.metrics.map(([k, v]) => `<div><b>${esc(v)}</b><span>${esc(k)}</span></div>`).join("")}</div>
     <div class="sec-grid">${e.sections.map(sec).join("")}</div></div>`;
   $("#xprofile").scrollTop = 0;
-  $("#xprofile").querySelectorAll("[data-k]").forEach((el) => { const gid = el.dataset.k && graphIdFor(el.dataset.k); if (gid && G.byId[gid]) el.onclick = () => { if (!xN.get(gid)) xN.add(visNode(G.byId[gid])); if (nodeId && !xE.get().some((x) => (x.from === nodeId && x.to === gid) || (x.to === nodeId && x.from === gid))) expand(nodeId); selectNode(gid); }; });
+  $("#xprofile").querySelectorAll("[data-k]").forEach((el) => { const gid = el.dataset.k && graphIdFor(el.dataset.k); if (gid && G.byId[gid]) el.onclick = () => { addNear(G.byId[gid], nodeId); if (nodeId && !xE.get().some((x) => (x.from === nodeId && x.to === gid) || (x.to === nodeId && x.from === gid))) expand(nodeId); selectNode(gid); }; });
   $("#askThis").onclick = () => { show("chat"); input.value = `What should we know about ${tn.toLowerCase().replace(/s$/, "")} "${e.name}": performance, what consumers and the client say, and what to do next?`; input.focus(); input.dispatchEvent(new Event("input")); };
   icons();
 }
