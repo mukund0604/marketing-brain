@@ -55,11 +55,11 @@ def context_block(chunks):
     return "\n\n".join(f"[{i + 1}] ({c['kind']}, {c['source']}) {c['text']}" for i, c in enumerate(chunks))
 
 
-def llm_json(prompt):
+def llm_json(prompt, temperature=0.6):
     r = gemini().models.generate_content(
         model=TEXT_MODEL,
         contents=prompt,
-        config=types.GenerateContentConfig(response_mime_type="application/json", temperature=0.6),
+        config=types.GenerateContentConfig(response_mime_type="application/json", temperature=temperature),
     )
     return json.loads(r.text)
 
@@ -93,32 +93,47 @@ def status():
     return {"mode": brain.mode, "brand": "Tidelight", "fictional": True, "text_model": TEXT_MODEL, "image_model": IMAGE_MODEL}
 
 
-def write_concept(brief, city, memory_block, cite_hint="result id like [B3]"):
+PAST_HEADLINES = [c[6] for c in tl.CREATIVES]
+_norm = lambda h: "".join(ch for ch in h.lower() if ch.isalnum())
+
+
+def write_concept(brief, city, memory_block, cite_hint="result id like [B3]", avoid=()):
     if memory_block:
         memory = f"""BRAND MEMORY (guidelines, past ad performance, client feedback). Client feedback is
 non-negotiable. Brand-book specifics (hex colors, type, logo size/placement, layout margins, safe zones,
-banned visuals, compliance wording) are hard requirements. Lean into patterns from WINNER creatives, avoid patterns
-from UNDERPERFORMER / rejected ones, and address consumer objections where relevant.
+banned visuals, compliance wording) are hard requirements. Learn the PRINCIPLES behind WINNER creatives (why they won)
+and avoid what made UNDERPERFORMER / rejected ones fail; address consumer objections where relevant.
+Past creatives are evidence, not templates: do NOT recreate any past creative's scene or composition, and never reuse a
+past headline verbatim.
 {memory_block}"""
     else:
-        memory = "No brand memory available. Use generic best practices for a coffee brand ad."
+        memory = "No brand memory available. Use generic best practices for a skincare brand ad."
     return llm_json(f"""You are a senior performance-marketing creative director at Zocket.
 Client: Tidelight (fictional San Francisco clean-skincare brand, fragrance-free, ocean botanicals). Placement: {city}.
 Brief: {brief}
 
 {memory}
 
+Headlines already used by this brand (FORBIDDEN, do not reuse or lightly reword): {"; ".join(PAST_HEADLINES + list(avoid))}
+
+First, silently sketch three genuinely different directions (different archetype, scene, composition and headline
+angle), then pick the strongest one that is also the most different from every past creative in memory.
 Write ONE paid social static ad concept. Return JSON:
 {{
-  "headline": "on-image headline",
+  "direction": "the chosen direction in one line (archetype + scene)",
+  "headline": "on-image headline (new, not a past headline)",
   "primary_text": "1-2 sentence ad caption",
   "visual": "one-sentence description of the image",
-  "image_prompt": "a prose concept for the image model, in the order: purpose and ratio (paid Meta feed ad, 1:1), scene, subject, light, colours (described in words, never hex), on-image copy in quotes with typeface style, logo placement as a sentence, compliance text verbatim if any, explicit negatives for every banned visual, and a physical-realism line: every object rests on a surface or is held; any pour shows a cropped hand (wrist down, no face or body) holding the vessel, otherwise the vessel stands beside the finished cup; no floating or levitating objects.",
+  "image_prompt": "a prose concept for the image model, in the order: purpose and ratio (paid social ad, ratio from the placement), scene, subject, light, colours (described in words, never hex), on-image copy in double quotes (ONLY real ad copy goes in quotes), typography described in plain words (e.g. 'a clean, wide geometric sans in deep navy, lowercase'), never font names, weights, hex codes or colour names written as if they were text, logo placement as a sentence, compliance text verbatim if any, explicit negatives for every banned visual, and a physical-realism line: every object rests on a surface or is held; any pour shows a cropped hand (wrist down, no face or body) holding the vessel, otherwise the vessel stands beside the finished cup; no floating or levitating objects.",
   "decisions": [{{"decision": "short choice made", "because": "reason", "source": "{cite_hint} or 'generic'"}}]
 }}
 Give 3-6 decisions.
+Text in the image: the image model renders every quoted string literally, so the only quoted strings allowed are the
+headline, an optional short sub-line, the CTA, and mandatory legal lines. Never quote font names, weights, colours or
+layout specs. Each quoted string appears exactly ONCE in the image (state "the headline appears once, at the top" or
+similar); never repeat the headline or logo.
 Realism is non-negotiable: it must look like a real product photograph. A cropped hand holding a vessel is allowed and
-does NOT count as "people in the ad"; faces and bodies do.""")
+does NOT count as "people in the ad"; faces and bodies do.""", temperature=0.95)
 
 
 def verified_assets(brief, results):
@@ -135,9 +150,14 @@ def verified_assets(brief, results):
 
 def make_creative(brief, placement, results):
     """Used by the agent. With memory: brand-book/campaign/feedback context with ids, plus verified asset references.
-    Without memory (control): just the brief, no assets."""
+    Without memory (control): just the brief, no assets. A concept that reuses a past headline is rewritten."""
     block = "\n\n".join(f"[{r['rid']}] ({r['kind']}) {r['title']}\n{r['text'][:900]}" for r in results) if results else None
     concept = write_concept(brief, placement, block, cite_hint="result id like [B3], [C2], [V7] or [F1]")
+    past = {_norm(h) for h in PAST_HEADLINES}
+    for _ in range(2):
+        if _norm(concept.get("headline", "")) not in past:
+            break
+        concept = write_concept(brief, placement, block, cite_hint="result id like [B3], [C2], [V7] or [F1]", avoid=[concept["headline"]])
     aspect = "4:5" if "4:5" in placement else "9:16" if "9:16" in placement else "1:1"
     refs = verified_assets(brief, results) if results else []
     prompt = concept["image_prompt"]

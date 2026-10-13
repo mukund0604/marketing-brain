@@ -9,6 +9,7 @@ import json
 import os
 import shutil
 import sys
+import time
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -45,10 +46,18 @@ def main():
     print(f"feedback memories to remove: {extra_mem or 'none'}")
     print(f"brand-book items to remove:  {extra_brand or 'none'}")
     if not DRY:
-        if extra_mem:
-            c.context.delete(database=DB, collection=cols["feedback"], type="memory", ids=extra_mem)
-        if extra_brand:
-            c.context.delete(database=DB, collection=cols["brand"], type="knowledge", ids=extra_brand)
+        for collection, type_, ids in ((cols["feedback"], "memory", extra_mem), (cols["brand"], "knowledge", extra_brand)):
+            pending = list(ids)
+            for attempt in range(20):  # HydraDB refuses to delete a source that is still indexing; wait and retry
+                if not pending:
+                    break
+                res = c.context.delete(database=DB, collection=collection, type=type_, ids=pending).data
+                pending = [r.id for r in (res.results or []) if not r.deleted] if res and res.results else []
+                if pending:
+                    print(f"  still indexing, retrying in 15s: {pending}")
+                    time.sleep(15)
+            if pending:
+                print(f"  could not delete (try again in a minute): {pending}")
         for d in ("data", "generated"):
             p = ROOT / d
             if p.exists():
