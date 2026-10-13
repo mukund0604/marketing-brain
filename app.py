@@ -84,7 +84,8 @@ def gen_image(prompt, refs=None, aspect="1:1"):
 
 @app.get("/")
 def index():
-    return FileResponse(ROOT / "static" / "index.html")
+    # never cache the page itself, so a refresh always shows the latest UI
+    return FileResponse(ROOT / "static" / "index.html", headers={"Cache-Control": "no-store, must-revalidate"})
 
 
 @app.get("/api/status")

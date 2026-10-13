@@ -309,6 +309,10 @@
   .trail button:hover { color: var(--ink); } .trail button.cur { color: var(--ink); font-weight: 600; }
   .trail svg { width: 13px; height: 13px; color: var(--faint); }
   .glegend .ring { width: 10px; height: 10px; border-radius: 50%; background: #fff; border: 2.5px solid; }
+  .zoom { position: absolute; z-index: 3; right: 12px; top: 60px; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); overflow: hidden; }
+  .zoom button { width: 34px; height: 34px; display: grid; place-items: center; border: 0; background: none; cursor: pointer; color: var(--ink-2); }
+  .zoom button + button { border-top: 1px solid var(--line); }
+  .zoom button:hover { background: var(--hover); color: var(--ink); }
   .glegend { position: absolute; z-index: 2; left: 12px; bottom: 34px; display: flex; gap: 10px; flex-wrap: wrap; font-size: 11.5px; color: var(--ink-2); background: rgba(255,255,255,.92); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; box-shadow: var(--shadow-sm); }
   .glegend span { display: inline-flex; align-items: center; gap: 5px; } .glegend i { width: 9px; height: 9px; border-radius: 50%; }
   .ghint { position: absolute; z-index: 2; left: 12px; bottom: 10px; font-size: 11px; color: var(--faint); }
@@ -449,6 +453,11 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
           <nav class="trail" id="xtrail"></nav>
         </div>
         <div id="xgraph"></div>
+        <div class="zoom" role="group" aria-label="Zoom">
+          <button id="xzin" aria-label="Zoom in" title="Zoom in"><i data-lucide="plus"></i></button>
+          <button id="xzout" aria-label="Zoom out" title="Zoom out"><i data-lucide="minus"></i></button>
+          <button id="xzfit" aria-label="Fit to screen" title="Fit to screen"><i data-lucide="maximize-2"></i></button>
+        </div>
         <div class="glegend" id="xlegend"></div>
         <div class="ghint">Click a node to open it and expand its connections · drag to move · scroll to zoom</div>
       </div>
@@ -884,7 +893,7 @@ function expand(id) {
       const hid = `HUB:${t}`; xHubs[hid] = list;
       const [, col] = nt(t), [c, soft] = HEX[col];
       if (!xN.get(hid)) xN.add({ id: hid, label: `${list.length} ${PLURAL[t]}`, title: `Click to show all ${PLURAL[t].toLowerCase()}`, shape: "box", margin: { top: 7, bottom: 7, left: 11, right: 11 },
-        shapeProperties: { borderRadius: 999 }, borderWidth: 1.5, color: { background: soft, border: c, highlight: { background: "#fff", border: c }, hover: { background: "#fff", border: c } },
+        shapeProperties: { borderRadius: 14 }, borderWidth: 1.5, color: { background: soft, border: c, highlight: { background: "#fff", border: c }, hover: { background: "#fff", border: c } },
         font: { size: 13, face: "Inter", color: "#0f172a" } });
       addEdge(id, hid, list[0].type);
     });
@@ -916,7 +925,10 @@ function resetGraph() {
       font: { size: 10, face: "JetBrains Mono", color: "#3e63dd", strokeWidth: 4, strokeColor: "#fbfbfc" } },
   });
   xnet.on("click", (p) => { if (p.nodes.length) selectNode(p.nodes[0]); });
-  xnet.once("stabilizationIterationsDone", () => xnet.fit({ animation: { duration: 400 } }));
+  // fit once the layout has actually settled (fitting earlier leaves the graph tiny)
+  const settleFit = () => xnet.fit({ animation: { duration: 400, easingFunction: "easeOutQuad" } });
+  xnet.once("stabilized", settleFit);
+  setTimeout(settleFit, 1600);
   selectNode(brand.id, false);
 }
 function nodeTitle(id) {
@@ -978,6 +990,10 @@ function renderDrawer(id) {
   $("#xprofile").scrollTop = 0; icons();
 }
 $("#xreset").onclick = () => G && resetGraph();
+const zoomBy = (f) => xnet && xnet.moveTo({ scale: Math.min(3, Math.max(.04, xnet.getScale() * f)), animation: { duration: 200, easingFunction: "easeOutQuad" } });
+$("#xzin").onclick = () => zoomBy(1.3);
+$("#xzout").onclick = () => zoomBy(1 / 1.3);
+$("#xzfit").onclick = () => xnet && xnet.fit({ animation: { duration: 300, easingFunction: "easeOutQuad" } });
 $("#xq").onchange = () => { const v = $("#xq").value.trim().toLowerCase(); const m = G && G.nodes.find((n) => n.label.toLowerCase() === v); if (m) { $("#xq").value = ""; if (!xN.get(m.id)) xN.add(visNode(m)); selectNode(m.id); } };
 function graphIdFor(key) {  // entity key -> graph node id
   const [t, ...rest] = key.split(":"); const name = rest.join(":");
