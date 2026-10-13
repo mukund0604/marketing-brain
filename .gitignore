@@ -10,3 +10,5 @@ video/build/
 video/vo/*.wav
 video/*.mp4
 video/*.png
+video/gallery/
+.DS_Store

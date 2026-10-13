@@ -190,7 +190,7 @@ def brain_view():
             "relations": sum(len(g["relations"]) for g in data["payload"][layer]["graph"].values()) if layer != "feedback" else 0,
             "samples": [{"title": it["title"].replace("Tidelight · ", ""), "body": it["fields"]["body"][:600],
                          "provider": it["provider"], "ts": it["timestamp"][:10]} for it in items]
-            if layer != "feedback" else [{"title": f"{m['from']} · {m['status']} on {m['media_id']}", "body": m["text"], "provider": "approvals"}
+            if layer != "feedback" else [{"title": f"{m['from']} · {m.get('status', 'feedback')} on {m.get('media_id') or m.get('on', 'general')}", "body": m["text"], "provider": "approvals"}
                                          for m in data["memories"] + read_log()],
         }
     rows = json.loads((TL / "ad_daily.json").read_text())
