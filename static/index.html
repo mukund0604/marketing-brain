@@ -304,6 +304,11 @@
   .gtools .search { box-shadow: var(--shadow); } .gtools .search input { width: 260px; }
   .gtools .btn { box-shadow: var(--shadow); }
   .gtools .muted { font-size: 12px; background: rgba(255,255,255,.85); padding: 3px 8px; border-radius: 6px; }
+  .trail { flex-basis: 100%; display: flex; align-items: center; gap: 2px; flex-wrap: wrap; font-size: 12px; }
+  .trail button { border: 0; background: rgba(255,255,255,.9); height: 24px; padding: 0 8px; border-radius: 6px; cursor: pointer; color: var(--muted); box-shadow: var(--shadow-sm); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .trail button:hover { color: var(--ink); } .trail button.cur { color: var(--ink); font-weight: 600; }
+  .trail svg { width: 13px; height: 13px; color: var(--faint); }
+  .glegend .ring { width: 10px; height: 10px; border-radius: 50%; background: #fff; border: 2.5px solid; }
   .glegend { position: absolute; z-index: 2; left: 12px; bottom: 34px; display: flex; gap: 10px; flex-wrap: wrap; font-size: 11.5px; color: var(--ink-2); background: rgba(255,255,255,.92); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; box-shadow: var(--shadow-sm); }
   .glegend span { display: inline-flex; align-items: center; gap: 5px; } .glegend i { width: 9px; height: 9px; border-radius: 50%; }
   .ghint { position: absolute; z-index: 2; left: 12px; bottom: 10px; font-size: 11px; color: var(--faint); }
@@ -441,6 +446,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
           <label class="search"><i data-lucide="search"></i><input id="xq" list="xents" placeholder="Jump to a product, campaign, theme…"></label><datalist id="xents"></datalist>
           <button class="btn" id="xreset"><i data-lucide="rotate-ccw"></i>Reset</button>
           <span class="muted" id="xcount"></span>
+          <nav class="trail" id="xtrail"></nav>
         </div>
         <div id="xgraph"></div>
         <div class="glegend" id="xlegend"></div>
@@ -821,7 +827,7 @@ const NT = {  // graph node type -> [display, layer color key, size, entity type
 const SECTION_T = new Set(["COLORPALETTE", "TYPOGRAPHY", "LOGOUSAGE", "LAYOUTSYSTEM", "VISUALIDENTITY", "TONEOFVOICE", "COMPLIANCERULES", "CREATIVEARCHETYPES", "BRANDAMBASSADOR"]);
 const nt = (t) => NT[SECTION_T.has(t) ? "SECTION" : t] || ["Entity", "B", 9];
 const HEX = { ink: ["#0f172a", "#0f172a"], B: ["#3e63dd", "#dfe6fb"], C: ["#7c3aed", "#ebe2fd"], V: ["#0e8a7d", "#d3efeb"], M: ["#b45309", "#fbe6cc"] };
-let X = null, G = null, xnet = null, xN = null, xE = null, xExpanded = new Set(), xSel = null;
+let X = null, G = null, xnet = null, xN = null, xE = null, xExpanded = new Set(), xSel = null, xTrail = [];
 function entKey(n) {
   const e = nt(n.type)[3]; if (!e) return null;
   let name = n.label;
@@ -836,27 +842,40 @@ async function loadExplore() {
     g.edges.forEach((e) => { (adj[e.from] ||= []).push({ type: e.type, other: e.to, dir: "out" }); (adj[e.to] ||= []).push({ type: e.type, other: e.from, dir: "in" }); });
     G = { byId, adj, nodes: g.nodes };
     $("#xents").innerHTML = g.nodes.filter((n) => n.type !== "CONSUMER").map((n) => `<option value="${esc(n.label)}">${esc(nt(n.type)[0])}</option>`).join("");
-    $("#xlegend").innerHTML = [["B", "Brand book & products"], ["C", "Campaigns & creatives"], ["V", "Consumer voice"], ["M", "Market"]].map(([k, l]) => `<span><i style="background:${HEX[k][0]}"></i>${l}</span>`).join("");
+    $("#xlegend").innerHTML = [["B", "Brand book & products"], ["C", "Campaigns & creatives"], ["V", "Consumer voice"], ["M", "Market"]].map(([k, l]) => `<span><i style="background:${HEX[k][0]}"></i>${l}</span>`).join("") +
+      `<span style="border-left:1px solid var(--line);padding-left:10px"><b class="ring" style="border-color:${RING.ok}"></b>winning / positive</span><span><b class="ring" style="border-color:${RING.warn}"></b>fatiguing / mixed</span><span><b class="ring" style="border-color:${RING.bad}"></b>underperforming / negative</span>`;
   }
   if (!xnet) resetGraph();
 }
+const RING = { ok: "#18a058", warn: "#e0a100", bad: "#e5484d" };
 function visNode(n, extra = {}) {
-  const [label, col, size] = nt(n.type), [c, soft] = HEX[col];
-  const name = n.type === "AD" || n.type === "CREATIVE" ? n.label.replace(/^(ad|creative) /, "") : n.label;
-  return { id: n.id, label: n.type === "CONSUMER" ? "" : (name.length > 30 ? name.slice(0, 29) + "…" : name), title: `${label}: ${n.label}`, shape: "dot", size,
-    color: { background: c, border: "#ffffff", highlight: { background: c, border: "#0f172a" }, hover: { background: c, border: "#0f172a" } }, borderWidth: 2, borderWidthSelected: 3,
+  let [label, col, size] = nt(n.type); const [c] = HEX[col];
+  const ek = entKey(n), e = ek && X[ek];
+  let name = e ? e.name : n.label.replace(/^(ad|creative) /, "");
+  if (n.type === "REVIEWTHEME" && e) name = `${n.label} (${e.metrics[0][1]})`;
+  if (e?.weight) size = Math.min(26, size + Math.sqrt(e.weight));
+  const ring = e?.status ? RING[e.status] : "#ffffff";
+  const pos = extra._near ? (() => { const p = xnet?.getPositions([extra._near])[extra._near]; return p ? { x: p.x + (Math.random() - .5) * 160, y: p.y + (Math.random() - .5) * 160 } : {}; })() : {};
+  delete extra._near;
+  return { id: n.id, label: n.type === "CONSUMER" ? "" : (name.length > 34 ? name.slice(0, 33) + "…" : name), title: `${label}: ${e ? e.name + (e.signal ? " · " + e.signal : "") : n.label}`, shape: "dot", size, ...pos,
+    color: { background: c, border: ring, highlight: { background: c, border: e?.status ? ring : "#0f172a" }, hover: { background: c, border: e?.status ? ring : "#0f172a" } }, borderWidth: e?.status ? 4 : 2, borderWidthSelected: e?.status ? 5 : 3,
     font: { size: n.type === "BRAND" ? 15 : 12, face: "Inter", color: "#1e293b", strokeWidth: 4, strokeColor: "#fbfbfc", bold: { face: "Inter" } }, ...extra };
 }
-function addEdge(a, b, type) { const id = `${a}>${type}>${b}`; if (!xE.get(id)) xE.add({ id, from: a, to: b, title: type, label: "" }); }
+function addEdge(a, b, type) { const id = `${a}>${type}>${b}`; if (!xE.get(id)) xE.add({ id, from: a, to: b, title: type, label: type || " ", font: { size: 0 } }); }
 let xHubs = {};
 const PLURAL = { PRODUCT: "Products", CAMPAIGN: "Campaigns", REVIEWTHEME: "Review themes", COMPETITOR: "Competitors", CATEGORYTREND: "Category trends", AGENTSKILL: "Agent skills", ORGMEMORY: "Org memory" };
 function expand(id) {
   if (xExpanded.has(id)) return; xExpanded.add(id);
   if (id.startsWith("HUB:")) {  // fan out a group's members
-    xHubs[id].forEach(({ o, type }) => { if (!xN.get(o.id)) xN.add(visNode(o)); addEdge(id, o.id, type); });
+    xHubs[id].forEach(({ o, type }) => { if (!xN.get(o.id)) xN.add(visNode(o, { _near: id })); addEdge(id, o.id, type); });
     return count();
   }
-  const rels = G.adj[id] || [], consumers = {};
+  let rels = G.adj[id] || []; const consumers = {};
+  // ads and creatives are one thing to a marketer: show the creative, route the ad's relationships through it
+  const creativeOfAd = (adId) => (G.adj[adId] || []).find((r) => G.byId[r.other]?.type === "CREATIVE")?.other;
+  const adOfCreative = (crId) => (G.adj[crId] || []).find((r) => G.byId[r.other]?.type === "AD")?.other;
+  if (G.byId[id]?.type === "CREATIVE") { const ad = adOfCreative(id); rels = (G.adj[ad] || []).filter((r) => r.other !== id); }
+  rels = rels.map((r) => G.byId[r.other]?.type === "AD" ? { ...r, other: creativeOfAd(r.other) || r.other } : r);
   if (G.byId[id]?.type === "BRAND") {  // brand: group neighbours by type so the first view stays readable
     const byT = {};
     rels.forEach((r) => { const o = G.byId[r.other]; if (o) (byT[o.type] ||= []).push({ o, type: r.type }); });
@@ -874,18 +893,18 @@ function expand(id) {
   rels.forEach((r) => {
     const o = G.byId[r.other]; if (!o) return;
     if (o.type === "CONSUMER") { (consumers[r.type] ||= []).push(o); return; }
-    if (!xN.get(o.id)) xN.add(visNode(o));
+    if (!xN.get(o.id)) xN.add(visNode(o, { _near: id }));
     r.dir === "out" ? addEdge(id, o.id, r.type) : addEdge(o.id, id, r.type);
   });
   Object.entries(consumers).forEach(([type, list]) => {
-    if (list.length <= 5) list.forEach((o) => { if (!xN.get(o.id)) xN.add(visNode(o)); addEdge(o.id, id, type); });
-    else { const gid = `CONSUMERS:${id}`; if (!xN.get(gid)) xN.add(visNode({ id: gid, type: "CONSUMERS", label: `${list.length} consumers` })); addEdge(gid, id, type); }
+    if (list.length <= 5) list.forEach((o) => { if (!xN.get(o.id)) xN.add(visNode(o, { _near: id })); addEdge(o.id, id, type); });
+    else { const gid = `CONSUMERS:${id}`; if (!xN.get(gid)) xN.add(visNode({ id: gid, type: "CONSUMERS", label: `${list.length} consumers` }, { _near: id })); addEdge(gid, id, type); }
   });
   count();
 }
 function count() { $("#xcount").textContent = `${xN.length} on canvas · ${G.nodes.length} entities in the brain`; }
 function resetGraph() {
-  xExpanded = new Set(); xHubs = {}; xN = new vis.DataSet(); xE = new vis.DataSet();
+  xExpanded = new Set(); xHubs = {}; xTrail = []; xN = new vis.DataSet(); xE = new vis.DataSet();
   const brand = G.nodes.find((n) => n.type === "BRAND");
   xN.add(visNode(brand));
   expand(brand.id);
@@ -900,13 +919,33 @@ function resetGraph() {
   xnet.once("stabilizationIterationsDone", () => xnet.fit({ animation: { duration: 400 } }));
   selectNode(brand.id, false);
 }
+function nodeTitle(id) {
+  if (id.startsWith("HUB:")) return PLURAL[id.slice(4)] || id;
+  const n = G.byId[id]; if (!n) return "Consumers";
+  const k = entKey(n); return n.type === "BRAND" ? "Tidelight" : (k && X[k] ? X[k].name : n.label);
+}
+function renderTrail() {
+  $("#xtrail").innerHTML = xTrail.map((id, i) => `${i ? `<i data-lucide="chevron-right"></i>` : ""}<button class="${i === xTrail.length - 1 ? "cur" : ""}" data-id="${esc(id)}">${esc(nodeTitle(id))}</button>`).join("");
+  document.querySelectorAll("#xtrail button").forEach((b) => b.onclick = () => { const i = xTrail.indexOf(b.dataset.id); xTrail = xTrail.slice(0, i); selectNode(b.dataset.id, true); });
+  icons();
+}
+function focusDim(id) {
+  const keep = new Set([id]);
+  xE.get().forEach((e) => { if (e.from === id) keep.add(e.to); if (e.to === id) keep.add(e.from); });
+  const all = G.byId[id]?.type === "BRAND";
+  xN.update(xN.get().map((n) => ({ id: n.id, opacity: all || keep.has(n.id) ? 1 : .22, font: { ...(n.font || {}), color: all || keep.has(n.id) ? "#1e293b" : "rgba(30,41,59,.3)" } })));
+  xE.update(xE.get().map((e) => ({ id: e.id, color: { color: all || e.from === id || e.to === id ? "#aab4c3" : "rgba(205,211,221,.35)", highlight: "#3e63dd" } })));
+}
 function selectNode(id, grow = true) {
   xSel = id;
+  if (xTrail[xTrail.length - 1] !== id) { const i = xTrail.indexOf(id); xTrail = i >= 0 ? xTrail.slice(0, i + 1) : [...xTrail, id].slice(-6); }
+  renderTrail();
   if (grow && !id.startsWith("CONSUMERS:")) expand(id);
   // show relationship names only on edges touching the selection
   const touching = xE.get().filter((e) => e.from === id || e.to === id).length;
   const showLabels = grow && touching <= 14 && G.byId[id]?.type !== "BRAND";
-  xE.update(xE.get().map((e) => ({ id: e.id, label: showLabels && (e.from === id || e.to === id) ? e.title : "" })));
+  xE.update(xE.get().map((e) => { const on = showLabels && (e.from === id || e.to === id); return { id: e.id, label: e.title || " ", font: { size: on ? 10 : 0 } }; }));
+  focusDim(id);
   xnet.selectNodes([id]);
   if (grow) setTimeout(() => xnet.focus(id, { scale: Math.max(xnet.getScale(), .85), animation: { duration: 450, easingFunction: "easeOutQuad" } }), 250);
   renderDrawer(id);
@@ -942,7 +981,7 @@ $("#xreset").onclick = () => G && resetGraph();
 $("#xq").onchange = () => { const v = $("#xq").value.trim().toLowerCase(); const m = G && G.nodes.find((n) => n.label.toLowerCase() === v); if (m) { $("#xq").value = ""; if (!xN.get(m.id)) xN.add(visNode(m)); selectNode(m.id); } };
 function graphIdFor(key) {  // entity key -> graph node id
   const [t, ...rest] = key.split(":"); const name = rest.join(":");
-  const map = { product: `PRODUCT:${name}`, campaign: `CAMPAIGN:${name}`, archetype: `CREATIVEARCHETYPE:${name}`, theme: `REVIEWTHEME:${name}`, competitor: `COMPETITOR:${name}`, platform: `PLATFORM:${name}`, creative: `AD:ad ${name}` };
+  const map = { product: `PRODUCT:${name}`, campaign: `CAMPAIGN:${name}`, archetype: `CREATIVEARCHETYPE:${name}`, theme: `REVIEWTHEME:${name}`, competitor: `COMPETITOR:${name}`, platform: `PLATFORM:${name}`, creative: `CREATIVE:creative ${name}` };
   return map[t];
 }
 function renderProfile(key, nodeId) {

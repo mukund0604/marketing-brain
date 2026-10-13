@@ -79,6 +79,7 @@ def build():
         E[f"product:{name}"] = {
             "type": "product", "name": name, "subtitle": f"{p['category']} · ${p['price']} · {p['size']}",
             "signal": f"{roas:.2f}x ROAS" if roas else f"{len(pv)} mentions",
+            "status": ("ok" if roas >= 2.5 else "bad" if roas < 1.8 else "warn") if roas else None, "weight": len(pv) + 4 * len(pcs),
             "metrics": [["Blended ROAS", f"{roas:.2f}x" if roas else "–"], ["Campaigns", len(pcamps)], ["Creatives", len(pcs)],
                         ["Consumer mentions", len(pv)], ["Positive", f"{s['pct_positive']}%" if pv else "–"]],
             "sections": [
@@ -122,6 +123,7 @@ def build():
         wins = sum(1 for c in live if c["roas"] >= 2.5)
         E[f"archetype:{a}"] = {
             "type": "archetype", "name": a, "subtitle": "creative archetype", "signal": f"{avg:.2f}x avg" if avg else "–",
+            "status": ("ok" if avg >= 2.5 else "bad" if avg < 1.8 else "warn") if avg else None,
             "metrics": [["Avg ROAS", f"{avg:.2f}x" if avg else "–"], ["Creatives", len(cs)], ["Win rate", f"{round(100 * wins / max(len(live), 1))}%"],
                         ["Best", max(live, key=lambda c: c["roas"])["id"] if live else "–"]],
             "sections": [
@@ -182,6 +184,7 @@ def build():
         p = perf.get(c["id"])
         E[f"creative:{c['id']}"] = {
             "type": "creative", "name": f"{c['id']} · {c['headline']}", "subtitle": f"{c['platform']} {c['format']} · {camp['name']}", "signal": c["verdict"], "hidden": True,
+            "status": "warn" if c["fatigued"] else {"Winner": "ok", "Underperformer": "bad", "Never ran": "bad"}.get(c["verdict"]),
             "metrics": [["ROAS", f"{c['roas']:.2f}x" if c["roas"] is not None else "–"], ["CTR", f"{p['ctr']:.2f}%" if p else "–"],
                         ["Frequency (last wk)", f"{p['last']['frequency']:.1f}" if p else "–"], ["Score", f"{c['score']}/10"]],
             "links": [{"id": f"campaign:{camp['name']}", "name": camp["name"]}, {"id": f"product:{c['product']}", "name": c["product"]}, {"id": f"archetype:{c['archetype']}", "name": c["archetype"]}],
