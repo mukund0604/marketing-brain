@@ -244,7 +244,25 @@
   .roas .rb u { position: absolute; top: -3px; bottom: -3px; width: 2px; border-radius: 1px; background: var(--ink); }
   .pill { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 5px; font-size: 11.5px; font-weight: 500; }
   .pill.ok { background: var(--ok-soft); color: var(--ok); } .pill.bad { background: var(--bad-soft); color: var(--bad); } .pill.warn { background: var(--warn-soft); color: var(--warn); } .pill.neutral { background: var(--sunken); color: var(--muted); }
-  #graph { height: 480px; background: var(--side); }
+  .gwrap { display: grid; grid-template-columns: minmax(0, 1fr) 300px; border-top: 0; }
+  #graph { height: 520px; background: var(--side); border-right: 1px solid var(--line); }
+  .gside { height: 520px; overflow-y: auto; padding: 14px 16px; font-size: 12.5px; }
+  .gside h4 { margin: 0 0 2px; font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
+  .gside .gtype { font-size: 11.5px; color: var(--muted); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+  .gside .gtype i { width: 8px; height: 8px; border-radius: 2px; }
+  .gside h5 { margin: 12px 0 4px; font-size: 11px; font-weight: 600; color: var(--muted); font-family: var(--mono); }
+  .gside button.gl { display: flex; align-items: center; gap: 6px; width: 100%; text-align: left; border: 0; background: none; padding: 4px 6px; margin: 0 -6px; border-radius: 5px; cursor: pointer; color: var(--ink-2); font-size: 12.5px; }
+  .gside button.gl:hover { background: var(--hover); color: var(--ink); }
+  .gside button.gl i { width: 7px; height: 7px; border-radius: 2px; flex: none; }
+  .gside .more { color: var(--faint); font-size: 12px; padding: 2px 0; }
+  .gside p { color: var(--muted); line-height: 1.55; margin: 0 0 10px; }
+  .gbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--surface); }
+  .gbar .picks { display: flex; gap: 6px; flex-wrap: wrap; }
+  .gbar .pick { height: 26px; padding: 0 9px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); font-size: 12px; color: var(--ink-2); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .gbar .pick i { width: 7px; height: 7px; border-radius: 2px; }
+  .gbar .pick:hover, .gbar .pick.on { border-color: var(--accent-line); background: var(--accent-soft); color: var(--accent-ink); }
+  .gbar .search input { width: 220px; }
+  @media (max-width: 860px) { .gwrap { grid-template-columns: 1fr; } #graph { height: 380px; border-right: 0; border-bottom: 1px solid var(--line); } .gside { height: auto; } }
   .seg { display: inline-flex; padding: 2px; border-radius: 7px; background: var(--sunken); gap: 2px; flex-wrap: wrap; }
   .seg button { border: 0; background: none; height: 26px; padding: 0 10px; border-radius: 5px; font-size: 12px; font-weight: 500; color: var(--muted); cursor: pointer; }
   .seg button.on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
@@ -277,6 +295,57 @@
   @keyframes up { from { opacity: 0; transform: translate(-50%, 6px); } }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; } }
 
+  /* ---------- explore (graph + intelligence drawer) */
+  #view-explore { display: grid; grid-template-columns: minmax(0, 1fr) 470px; min-height: 0; }
+  .gstage { position: relative; min-height: 0; background: radial-gradient(circle at 1px 1px, #e3e7ee 1px, transparent 0) 0 0 / 22px 22px, var(--side); border-right: 1px solid var(--line); }
+  #xgraph { position: absolute; inset: 0; }
+  .gtools { position: absolute; z-index: 2; top: 12px; left: 12px; right: 12px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; pointer-events: none; }
+  .gtools > * { pointer-events: auto; }
+  .gtools .search { box-shadow: var(--shadow); } .gtools .search input { width: 260px; }
+  .gtools .btn { box-shadow: var(--shadow); }
+  .gtools .muted { font-size: 12px; background: rgba(255,255,255,.85); padding: 3px 8px; border-radius: 6px; }
+  .glegend { position: absolute; z-index: 2; left: 12px; bottom: 34px; display: flex; gap: 10px; flex-wrap: wrap; font-size: 11.5px; color: var(--ink-2); background: rgba(255,255,255,.92); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; box-shadow: var(--shadow-sm); }
+  .glegend span { display: inline-flex; align-items: center; gap: 5px; } .glegend i { width: 9px; height: 9px; border-radius: 50%; }
+  .ghint { position: absolute; z-index: 2; left: 12px; bottom: 10px; font-size: 11px; color: var(--faint); }
+  .drawer { overflow-y: auto; min-height: 0; background: var(--canvas); }
+  .drawer .prof-inner { padding: 18px 18px 40px; max-width: none; }
+  .drawer .sec-grid { grid-template-columns: 1fr; gap: 12px; }
+  .drawer .stats div { flex: 1 1 33%; padding: 10px 12px; } .drawer .stats b { font-size: 17px; }
+  .drawer .prof-head h1 { font-size: 18px; }
+  .drawer .tbl th, .drawer .tbl td { padding: 8px 10px; font-size: 12px; }
+  .profile { overflow-y: auto; min-height: 0; }
+  .prof-inner { max-width: 980px; margin: 0 auto; padding: 24px 28px 48px; }
+  .prof-head { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
+  .prof-ic { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; flex: none; }
+  .prof-ic svg { width: 20px; height: 20px; }
+  .prof-head h1 { margin: 0; font-size: 21px; font-weight: 600; letter-spacing: -.02em; }
+  .prof-head p { margin: 3px 0 0; color: var(--muted); font-size: 13px; }
+  .prof-head .grow { flex: 1; }
+  .links { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .elink { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); font-size: 12px; color: var(--ink-2); cursor: pointer; }
+  .elink:hover { border-color: var(--accent-line); background: var(--accent-soft); color: var(--accent-ink); }
+  .elink svg { width: 13px; height: 13px; }
+  .sec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .sec-grid .panel { margin-bottom: 0; }
+  .sec-full { grid-column: 1 / -1; }
+  .ptext { white-space: pre-wrap; color: var(--ink-2); line-height: 1.6; font-size: 13.5px; }
+  .quote { padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .quote:last-child { border-bottom: 0; }
+  .quote p { margin: 0 0 4px; font-size: 13px; color: var(--ink); line-height: 1.55; }
+  .quote small { color: var(--muted); font-size: 11.5px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .sdot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .sdot.positive { background: #3fae8f; } .sdot.negative { background: #e5484d; } .sdot.mixed, .sdot.neutral { background: #e9b949; }
+  .barrow { display: grid; grid-template-columns: minmax(0, 1fr) 120px 30px; gap: 10px; align-items: center; padding: 5px 0; font-size: 12.5px; border: 0; background: none; width: 100%; text-align: left; cursor: pointer; color: var(--ink-2); }
+  .barrow:hover span:first-child { color: var(--accent-ink); text-decoration: underline; text-underline-offset: 2px; }
+  .barrow span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .barrow .track { height: 7px; border-radius: 4px; background: var(--sunken); overflow: hidden; } .barrow .track i { display: block; height: 100%; border-radius: 4px; }
+  .barrow small { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .spark { display: flex; align-items: flex-end; gap: 4px; height: 90px; padding-top: 6px; }
+  .spark div { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; justify-content: flex-end; height: 100%; }
+  .spark i { display: block; width: 100%; max-width: 22px; border-radius: 3px 3px 0 0; background: var(--accent); opacity: .85; }
+  .spark small { font-size: 9.5px; color: var(--faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tbl tr.click td:first-child { font-family: var(--mono); font-size: 12px; }
+
   @media (max-width: 1100px) { #view-chat { grid-template-columns: minmax(0, 1fr) 340px; } }
   @media (max-width: 860px) {
     .app { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
@@ -285,7 +354,9 @@
     .nav { display: flex; padding: 6px; } .side h6, .layers-nav, .side-foot { display: none; }
     #view-chat, #view-chat.no-trace { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) auto; }
     .inspector { border-left: 0; border-top: 1px solid var(--line); max-height: 42vh; }
-    .starters, .grid2 { grid-template-columns: 1fr; }
+    .starters, .grid2, .sec-grid { grid-template-columns: 1fr; }
+    #view-explore { grid-template-columns: 1fr; grid-template-rows: 52vh minmax(0, 1fr); }
+    .gstage { border-right: 0; border-bottom: 1px solid var(--line); } .gtools .search input { width: 160px; } .ghint { display: none; }
     .thread-inner, .composer-wrap, .page-inner { padding-left: 16px; padding-right: 16px; }
     .topbar { padding: 0 12px; }
     .crumbs > span, .crumbs > svg { display: none; }
@@ -315,6 +386,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
     </div>
     <nav class="nav">
       <button data-tab="chat" class="on"><i data-lucide="sparkles"></i>Ask</button>
+      <button data-tab="explore"><i data-lucide="library-big"></i>Explore</button>
       <button data-tab="brain"><i data-lucide="brain"></i>Brain</button>
       <button data-tab="skills"><i data-lucide="wand-sparkles"></i>Skills</button>
     </nav>
@@ -363,6 +435,20 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
       </aside>
     </section>
 
+    <section class="view hidden" id="view-explore">
+      <div class="gstage">
+        <div class="gtools">
+          <label class="search"><i data-lucide="search"></i><input id="xq" list="xents" placeholder="Jump to a product, campaign, theme…"></label><datalist id="xents"></datalist>
+          <button class="btn" id="xreset"><i data-lucide="rotate-ccw"></i>Reset</button>
+          <span class="muted" id="xcount"></span>
+        </div>
+        <div id="xgraph"></div>
+        <div class="glegend" id="xlegend"></div>
+        <div class="ghint">Click a node to open it and expand its connections · drag to move · scroll to zoom</div>
+      </div>
+      <aside class="drawer" id="xprofile"></aside>
+    </section>
+
     <section class="view page hidden" id="view-brain">
       <div class="page-inner">
         <div class="page-head">
@@ -380,11 +466,6 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
         <div class="panel">
           <div class="panel-head"><h3>Campaign history</h3><span class="muted">Actual ROAS from daily ad data vs target</span></div>
           <table class="tbl" id="bcamps"></table>
-        </div>
-        <div class="panel">
-          <div class="panel-head"><h3>Brand graph</h3><span class="muted" id="gcount"></span><div class="grow"></div><div class="seg" id="gfilters"></div></div>
-          <div id="graph"></div>
-          <div class="ginfo" id="ginfo">Click a node to see its relationships. Schema follows Zocket's BrandOS graph (HydraDB Bring Your Own Graph).</div>
         </div>
         <div class="panel" id="recordsPanel">
           <div class="panel-head"><h3 id="rtitle">Records</h3><div class="grow"></div><label class="search"><i data-lucide="search"></i><input id="rsearch" placeholder="Filter records"></label></div>
@@ -448,7 +529,7 @@ const STARTERS = [
 
 // ------------------------------------------------------------ shell
 let brainData = null;
-const VIEWS = { chat: "Ask", brain: "Brain", skills: "Skills" };
+const VIEWS = { chat: "Ask", explore: "Explore", brain: "Brain", skills: "Skills" };
 function show(tab) {
   document.querySelectorAll(".nav button").forEach((x) => x.classList.toggle("on", x.dataset.tab === tab));
   Object.keys(VIEWS).forEach((t) => $(`#view-${t}`).classList.toggle("hidden", t !== tab));
@@ -456,6 +537,7 @@ function show(tab) {
   $("#newChat").classList.toggle("hidden", tab !== "chat"); $("#traceToggle").classList.toggle("hidden", tab !== "chat");
   if (tab === "brain") loadBrain();
   if (tab === "skills") loadSkills();
+  if (tab === "explore") loadExplore();
 }
 document.querySelectorAll(".nav button").forEach((b) => b.onclick = () => show(b.dataset.tab));
 $("#traceToggle").onclick = () => { const v = $("#view-chat"); v.classList.toggle("no-trace"); $("#traceToggle").classList.toggle("on", !v.classList.contains("no-trace")); };
@@ -679,9 +761,6 @@ function toggleDetail(row, open) {
 }
 
 // ------------------------------------------------------------ brain view
-const TYPE_COLOR = { BRAND: "#0f172a", GUIDELINES: "#3e63dd", PRODUCT: "#d97706", CAMPAIGN: "#7c3aed", AD: "#a78bfa", CREATIVE: "#c4b5fd",
-  CREATIVEARCHETYPE: "#6d28d9", CONSUMER: "#99d5cc", REVIEWTHEME: "#0e8a7d", PLATFORM: "#14b8a6", COMPETITOR: "#b45309",
-  CATEGORYTREND: "#d97706", SHAREOFVOICE: "#f59e0b", AGENTSKILL: "#18794e", ORGMEMORY: "#4ade80", PRODUCTGUIDELINES: "#93a8ef" };
 const LAYER_DESC = {
   brand: "Color system, type scale, logo, layout + safe zones, photography, voice, FDA/FTC rule pack, products, skills",
   campaigns: "8 campaigns over 18 months; every creative joined with daily performance and fatigue",
@@ -689,7 +768,7 @@ const LAYER_DESC = {
   market: "Competitors, pricing, ad activity, share of voice, category trends",
   feedback: "Approvals, send-backs and rejections from brand, legal and performance (infer=true)",
 };
-let net = null, recLayer = "brand", gFilter = new Set(["brand", "campaigns", "market"]);
+let recLayer = "brand";
 async function loadBrain() {
   if (!brainData) brainData = await api("/api/brain");
   const d = brainData, st = d.stats, L = d.layers;
@@ -719,7 +798,7 @@ async function loadBrain() {
         <td><span class="roas"><span class="rb"><i style="width:${100 * c.roas / rmax}%;background:${ok ? "var(--ok)" : "var(--bad)"}"></i>${tgt ? `<u style="left:${100 * tgt / rmax}%"></u>` : ""}</span><span class="num">${c.roas.toFixed(2)}x</span><span class="faint num">${tgt ? `/ ${tgt}` : ""}</span></span></td>
         <td>${tgt ? `<span class="pill ${ok ? "ok" : "bad"}">${ok ? "Beat target" : "Missed"}</span>` : `<span class="pill neutral">${esc(c.kpi)}</span>`}</td>
         <td class="r num">${c.creatives}${c.fatigued ? ` <span class="pill warn">${c.fatigued} fatiguing</span>` : ""}</td></tr>`; }).join("");
-  renderRecords(); renderGraph(); icons();
+  renderRecords(); icons();
 }
 function renderRecords() {
   const l = brainData.layers[recLayer], q = ($("#rsearch").value || "").toLowerCase();
@@ -728,24 +807,171 @@ function renderRecords() {
   $("#records").innerHTML = rs.slice(0, 60).map((r) => `<div class="rec"><div class="rec-top"><b>${esc(r.title)}</b><span class="muted">${esc(r.provider)}${r.ts ? " · " + r.ts : ""}</span></div><pre>${esc(r.body)}</pre></div>`).join("") || `<div class="panel-body muted">No records match "${esc(q)}".</div>`;
 }
 $("#rsearch").oninput = () => brainData && renderRecords();
-function renderGraph() {
-  const g = brainData.graph;
-  $("#gfilters").innerHTML = ["brand", "campaigns", "voice", "market"].map((l) => `<button class="${gFilter.has(l) ? "on" : ""}" data-l="${l}">${LAYERS[l].name}</button>`).join("");
-  document.querySelectorAll("#gfilters button").forEach((b) => b.onclick = () => { gFilter.has(b.dataset.l) ? gFilter.delete(b.dataset.l) : gFilter.add(b.dataset.l); renderGraph(); });
-  const keep = new Set(g.nodes.filter((n) => gFilter.has(n.layer) || n.type === "BRAND" || n.type === "PRODUCT").map((n) => n.id));
-  const edges = g.edges.filter((e) => keep.has(e.from) && keep.has(e.to));
-  const usedN = new Set(edges.flatMap((e) => [e.from, e.to]));
-  const nodes = g.nodes.filter((n) => usedN.has(n.id)).map((n) => ({ id: n.id, label: n.type === "CONSUMER" ? "" : n.label.slice(0, 26), title: `${n.type}: ${n.label}`,
-    color: { background: TYPE_COLOR[n.type] || "#94a3b8", border: "#ffffff", highlight: { background: "#3e63dd", border: "#ffffff" } }, borderWidth: 1.5, shape: "dot",
-    size: n.type === "BRAND" ? 22 : n.type === "PRODUCT" || n.type === "CAMPAIGN" ? 12 : n.type === "CONSUMER" ? 4 : 7, font: { size: 11, color: "#334155", face: "Inter" } }));
-  $("#gcount").textContent = `${nodes.length} nodes · ${edges.length} relationships`;
-  if (!window.vis) { $("#graph").innerHTML = `<div class="t-empty">Graph library didn't load (offline?).</div>`; return; }
-  net && net.destroy();
-  net = new vis.Network($("#graph"), { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges.map((e, i) => ({ id: i, from: e.from, to: e.to, title: e.type, color: { color: "#d5dae2", highlight: "#3e63dd" }, width: .7 }))) },
-    { physics: { stabilization: { iterations: 160 }, barnesHut: { gravitationalConstant: -5500, springLength: 95 } }, interaction: { hover: true, tooltipDelay: 80 } });
-  net.on("click", (p) => { if (!p.nodes.length) return; const id = p.nodes[0];
-    const rel = g.edges.filter((e) => e.from === id || e.to === id).slice(0, 12).map((e) => `${e.from === id ? "→" : "←"} <b>${esc(e.type)}</b> ${esc((e.from === id ? e.to : e.from).split(":").slice(1).join(":"))}`);
-    $("#ginfo").innerHTML = `<b>${esc(id.split(":").slice(1).join(":"))}</b> <span class="pill neutral">${esc(id.split(":")[0])}</span> · ${rel.length} relationships<br>${rel.join(" &nbsp; ")}`; });
+// ------------------------------------------------------------ explore: interactive graph + intelligence drawer
+const XTYPES = { product: ["Products", "package"], campaign: ["Campaigns", "megaphone"], archetype: ["Archetypes", "shapes"], theme: ["Review themes", "messages-square"],
+  competitor: ["Competitors", "swords"], platform: ["Platforms", "globe"], creative: ["Creatives", "image"] };
+const XCOL = { product: "B", campaign: "C", archetype: "C", creative: "C", theme: "V", platform: "V", competitor: "M" };
+const NT = {  // graph node type -> [display, layer color key, size, entity type]
+  BRAND: ["Brand", "ink", 30], PRODUCT: ["Product", "B", 18, "product"], GUIDELINES: ["Guidelines", "B", 14], PRODUCTGUIDELINES: ["Product override", "B", 9],
+  AGENTSKILL: ["Agent skill", "B", 10], ORGMEMORY: ["Org memory", "B", 9], SECTION: ["Brand-book section", "B", 9],
+  CAMPAIGN: ["Campaign", "C", 17, "campaign"], AD: ["Ad", "C", 7, "creative"], CREATIVE: ["Creative", "C", 10, "creative"], CREATIVEARCHETYPE: ["Archetype", "C", 13, "archetype"],
+  REVIEWTHEME: ["Review theme", "V", 13, "theme"], PLATFORM: ["Platform", "V", 12, "platform"], CONSUMER: ["Consumer", "V", 6], CONSUMERS: ["Consumers", "V", 12],
+  COMPETITOR: ["Competitor", "M", 15, "competitor"], CATEGORYTREND: ["Category trend", "M", 11], SHAREOFVOICE: ["Share of voice", "M", 10],
+};
+const SECTION_T = new Set(["COLORPALETTE", "TYPOGRAPHY", "LOGOUSAGE", "LAYOUTSYSTEM", "VISUALIDENTITY", "TONEOFVOICE", "COMPLIANCERULES", "CREATIVEARCHETYPES", "BRANDAMBASSADOR"]);
+const nt = (t) => NT[SECTION_T.has(t) ? "SECTION" : t] || ["Entity", "B", 9];
+const HEX = { ink: ["#0f172a", "#0f172a"], B: ["#3e63dd", "#dfe6fb"], C: ["#7c3aed", "#ebe2fd"], V: ["#0e8a7d", "#d3efeb"], M: ["#b45309", "#fbe6cc"] };
+let X = null, G = null, xnet = null, xN = null, xE = null, xExpanded = new Set(), xSel = null;
+function entKey(n) {
+  const e = nt(n.type)[3]; if (!e) return null;
+  let name = n.label;
+  if (n.type === "AD" || n.type === "CREATIVE") name = n.label.split(" ").pop();
+  return `${e}:${name}`;
+}
+async function loadExplore() {
+  if (!X) X = (await api("/api/entities")).entities;
+  if (!brainData) brainData = await api("/api/brain");
+  if (!G) {
+    const g = brainData.graph, byId = Object.fromEntries(g.nodes.map((n) => [n.id, n])), adj = {};
+    g.edges.forEach((e) => { (adj[e.from] ||= []).push({ type: e.type, other: e.to, dir: "out" }); (adj[e.to] ||= []).push({ type: e.type, other: e.from, dir: "in" }); });
+    G = { byId, adj, nodes: g.nodes };
+    $("#xents").innerHTML = g.nodes.filter((n) => n.type !== "CONSUMER").map((n) => `<option value="${esc(n.label)}">${esc(nt(n.type)[0])}</option>`).join("");
+    $("#xlegend").innerHTML = [["B", "Brand book & products"], ["C", "Campaigns & creatives"], ["V", "Consumer voice"], ["M", "Market"]].map(([k, l]) => `<span><i style="background:${HEX[k][0]}"></i>${l}</span>`).join("");
+  }
+  if (!xnet) resetGraph();
+}
+function visNode(n, extra = {}) {
+  const [label, col, size] = nt(n.type), [c, soft] = HEX[col];
+  const name = n.type === "AD" || n.type === "CREATIVE" ? n.label.replace(/^(ad|creative) /, "") : n.label;
+  return { id: n.id, label: n.type === "CONSUMER" ? "" : (name.length > 30 ? name.slice(0, 29) + "…" : name), title: `${label}: ${n.label}`, shape: "dot", size,
+    color: { background: c, border: "#ffffff", highlight: { background: c, border: "#0f172a" }, hover: { background: c, border: "#0f172a" } }, borderWidth: 2, borderWidthSelected: 3,
+    font: { size: n.type === "BRAND" ? 15 : 12, face: "Inter", color: "#1e293b", strokeWidth: 4, strokeColor: "#fbfbfc", bold: { face: "Inter" } }, ...extra };
+}
+function addEdge(a, b, type) { const id = `${a}>${type}>${b}`; if (!xE.get(id)) xE.add({ id, from: a, to: b, title: type, label: "" }); }
+let xHubs = {};
+const PLURAL = { PRODUCT: "Products", CAMPAIGN: "Campaigns", REVIEWTHEME: "Review themes", COMPETITOR: "Competitors", CATEGORYTREND: "Category trends", AGENTSKILL: "Agent skills", ORGMEMORY: "Org memory" };
+function expand(id) {
+  if (xExpanded.has(id)) return; xExpanded.add(id);
+  if (id.startsWith("HUB:")) {  // fan out a group's members
+    xHubs[id].forEach(({ o, type }) => { if (!xN.get(o.id)) xN.add(visNode(o)); addEdge(id, o.id, type); });
+    return count();
+  }
+  const rels = G.adj[id] || [], consumers = {};
+  if (G.byId[id]?.type === "BRAND") {  // brand: group neighbours by type so the first view stays readable
+    const byT = {};
+    rels.forEach((r) => { const o = G.byId[r.other]; if (o) (byT[o.type] ||= []).push({ o, type: r.type }); });
+    Object.entries(byT).forEach(([t, list]) => {
+      if (list.length <= 1 || !PLURAL[t]) { list.forEach(({ o, type }) => { if (!xN.get(o.id)) xN.add(visNode(o)); addEdge(id, o.id, type); }); return; }
+      const hid = `HUB:${t}`; xHubs[hid] = list;
+      const [, col] = nt(t), [c, soft] = HEX[col];
+      if (!xN.get(hid)) xN.add({ id: hid, label: `${list.length} ${PLURAL[t]}`, title: `Click to show all ${PLURAL[t].toLowerCase()}`, shape: "box", margin: { top: 7, bottom: 7, left: 11, right: 11 },
+        shapeProperties: { borderRadius: 999 }, borderWidth: 1.5, color: { background: soft, border: c, highlight: { background: "#fff", border: c }, hover: { background: "#fff", border: c } },
+        font: { size: 13, face: "Inter", color: "#0f172a" } });
+      addEdge(id, hid, list[0].type);
+    });
+    return count();
+  }
+  rels.forEach((r) => {
+    const o = G.byId[r.other]; if (!o) return;
+    if (o.type === "CONSUMER") { (consumers[r.type] ||= []).push(o); return; }
+    if (!xN.get(o.id)) xN.add(visNode(o));
+    r.dir === "out" ? addEdge(id, o.id, r.type) : addEdge(o.id, id, r.type);
+  });
+  Object.entries(consumers).forEach(([type, list]) => {
+    if (list.length <= 5) list.forEach((o) => { if (!xN.get(o.id)) xN.add(visNode(o)); addEdge(o.id, id, type); });
+    else { const gid = `CONSUMERS:${id}`; if (!xN.get(gid)) xN.add(visNode({ id: gid, type: "CONSUMERS", label: `${list.length} consumers` })); addEdge(gid, id, type); }
+  });
+  count();
+}
+function count() { $("#xcount").textContent = `${xN.length} on canvas · ${G.nodes.length} entities in the brain`; }
+function resetGraph() {
+  xExpanded = new Set(); xHubs = {}; xN = new vis.DataSet(); xE = new vis.DataSet();
+  const brand = G.nodes.find((n) => n.type === "BRAND");
+  xN.add(visNode(brand));
+  expand(brand.id);
+  xnet && xnet.destroy();
+  xnet = new vis.Network($("#xgraph"), { nodes: xN, edges: xE }, {
+    physics: { solver: "forceAtlas2Based", forceAtlas2Based: { gravitationalConstant: -70, centralGravity: .008, springLength: 120, springConstant: .06, avoidOverlap: .5 }, stabilization: { iterations: 200 }, minVelocity: .8 },
+    interaction: { hover: true, tooltipDelay: 120, navigationButtons: false, keyboard: false },
+    edges: { color: { color: "#cdd3dd", highlight: "#3e63dd", hover: "#94a3b8" }, width: 1, selectionWidth: 1.5, arrows: { to: { enabled: true, scaleFactor: .35 } }, smooth: { type: "continuous" },
+      font: { size: 10, face: "JetBrains Mono", color: "#3e63dd", strokeWidth: 4, strokeColor: "#fbfbfc" } },
+  });
+  xnet.on("click", (p) => { if (p.nodes.length) selectNode(p.nodes[0]); });
+  xnet.once("stabilizationIterationsDone", () => xnet.fit({ animation: { duration: 400 } }));
+  selectNode(brand.id, false);
+}
+function selectNode(id, grow = true) {
+  xSel = id;
+  if (grow && !id.startsWith("CONSUMERS:")) expand(id);
+  // show relationship names only on edges touching the selection
+  const touching = xE.get().filter((e) => e.from === id || e.to === id).length;
+  const showLabels = grow && touching <= 14 && G.byId[id]?.type !== "BRAND";
+  xE.update(xE.get().map((e) => ({ id: e.id, label: showLabels && (e.from === id || e.to === id) ? e.title : "" })));
+  xnet.selectNodes([id]);
+  if (grow) setTimeout(() => xnet.focus(id, { scale: Math.max(xnet.getScale(), .85), animation: { duration: 450, easingFunction: "easeOutQuad" } }), 250);
+  renderDrawer(id);
+}
+function renderDrawer(id) {
+  if (id.startsWith("HUB:")) {
+    const t = id.slice(4), list = xHubs[id] || [], [, col] = nt(t), L = col === "ink" ? "B" : col;
+    const rows = list.map(({ o }) => { const k = entKey(o); const e = k && X[k]; return { o, e }; });
+    $("#xprofile").innerHTML = `<div class="prof-inner"><div class="prof-head"><span class="prof-ic" style="background:var(--L-${L}-soft);color:var(--L-${L})"><i data-lucide="layers"></i></span>
+      <div><h1>${list.length} ${PLURAL[t]}</h1><p>Tidelight · click one to open it</p></div></div>
+      <div class="panel"><table class="tbl">${rows.map(({ o, e }) => `<tr class="click" data-n="${esc(o.id)}"><td><b>${esc(o.label)}</b>${e ? `<div class="muted" style="font-size:11.5px">${esc(e.subtitle)}</div>` : ""}</td><td class="r num">${e ? `<span class="${e.status === "bad" ? "" : ""}">${esc(e.signal || "")}</span>` : ""}</td></tr>`).join("")}</table></div></div>`;
+    $("#xprofile").querySelectorAll("[data-n]").forEach((b) => b.onclick = () => { const o = G.byId[b.dataset.n]; if (!xN.get(o.id)) { xN.add(visNode(o)); addEdge(id, o.id, ""); } selectNode(o.id); });
+    $("#xprofile").scrollTop = 0; return icons();
+  }
+  const n = G.byId[id] || (id.startsWith("CONSUMERS:") ? { type: "CONSUMERS", label: "Consumers" } : null);
+  if (!n) return;
+  const key = entKey(n);
+  if (key && X[key]) return renderProfile(key, id);
+  // generic card for nodes without a profile (brand, guideline sections, skills, trends...)
+  const rel = {}; (G.adj[id] || []).forEach((r) => { const o = G.byId[r.other]; (rel[r.type] ||= []).push(o); });
+  const [label, col] = nt(n.type); const L = col === "ink" ? "B" : col;
+  const body = n.type === "BRAND" ? brainData.layers.brand.samples[0]?.body : (Object.values(brainData.layers).flatMap((l) => l.samples).find((s) => s.title.toLowerCase().includes(n.label.toLowerCase().replace(/^tidelight /, "")))?.body || "");
+  $("#xprofile").innerHTML = `<div class="prof-inner"><div class="prof-head"><span class="prof-ic" style="background:var(--L-${L}-soft);color:var(--L-${L})"><i data-lucide="${n.type === "BRAND" ? "building-2" : "file-text"}"></i></span>
+    <div><h1>${esc(n.type === "BRAND" ? "Tidelight" : n.label)}</h1><p>${esc(label)} · ${(G.adj[id] || []).length} relationships</p></div></div>
+    ${n.type === "BRAND" ? `<div class="stats"><div><b>${brainData.stats.layers.brand + brainData.stats.layers.campaigns + brainData.stats.layers.voice + brainData.stats.layers.market + brainData.stats.layers.feedback}</b><span>records</span></div><div><b>${brainData.stats.graph_relations}</b><span>relationships</span></div><div><b>$${Math.round(brainData.stats.ad_spend / 1000)}k</b><span>ad spend</span></div></div>` : ""}
+    ${body ? `<div class="panel"><div class="panel-head"><h3>${n.type === "BRAND" ? "Who they are" : "What the brain holds"}</h3></div><div class="panel-body ptext" style="max-height:340px;overflow:auto">${esc(body.slice(0, 1600))}</div></div>` : ""}
+    <div class="panel"><div class="panel-head"><h3>Connections</h3><span class="muted">click to open</span></div><div class="panel-body">${Object.entries(rel).map(([t, list]) =>
+      `<div style="margin-bottom:10px"><div class="mono muted" style="margin-bottom:4px">${esc(t)} · ${list.length}</div><div class="links" style="margin:0">${list.filter((o) => o.type !== "CONSUMER").slice(0, 12).map((o) => `<button class="elink" data-n="${esc(o.id)}">${esc(o.label.replace(/^(ad|creative) /, "").slice(0, 34))}</button>`).join("")}${list.some((o) => o.type === "CONSUMER") ? `<span class="muted" style="font-size:12px">${list.filter((o) => o.type === "CONSUMER").length} consumers</span>` : ""}</div></div>`).join("")}</div></div></div>`;
+  $("#xprofile").querySelectorAll("[data-n]").forEach((b) => b.onclick = () => { const o = G.byId[b.dataset.n]; if (!xN.get(o.id)) xN.add(visNode(o)); selectNode(o.id); });
+  $("#xprofile").scrollTop = 0; icons();
+}
+$("#xreset").onclick = () => G && resetGraph();
+$("#xq").onchange = () => { const v = $("#xq").value.trim().toLowerCase(); const m = G && G.nodes.find((n) => n.label.toLowerCase() === v); if (m) { $("#xq").value = ""; if (!xN.get(m.id)) xN.add(visNode(m)); selectNode(m.id); } };
+function graphIdFor(key) {  // entity key -> graph node id
+  const [t, ...rest] = key.split(":"); const name = rest.join(":");
+  const map = { product: `PRODUCT:${name}`, campaign: `CAMPAIGN:${name}`, archetype: `CREATIVEARCHETYPE:${name}`, theme: `REVIEWTHEME:${name}`, competitor: `COMPETITOR:${name}`, platform: `PLATFORM:${name}`, creative: `AD:ad ${name}` };
+  return map[t];
+}
+function renderProfile(key, nodeId) {
+  const e = X[key]; if (!e) return;
+  const L = XCOL[e.type] || "B", [tn, ic] = XTYPES[e.type];
+  const link = (id, name) => X[id] ? `<button class="elink" data-k="${esc(id)}"><i data-lucide="${XTYPES[X[id].type][1]}"></i>${esc(name)}</button>` : "";
+  const sec = (s) => {
+    let body = "";
+    if (s.kind === "text") body = `<div class="panel-body ptext">${esc(s.text)}</div>`;
+    if (s.kind === "table") body = `<table class="tbl"><tr>${s.cols.filter((c) => c !== "Platform").map((c, i, a) => `<th class="${i === a.length - 1 ? "r" : ""}">${esc(c)}</th>`).join("")}<th></th></tr>` +
+      s.rows.map((r) => { const cells = r.cells.filter((_, i) => s.cols[i] !== "Platform"); return `<tr class="click" data-k="${esc(r.link || "")}">${cells.map((c, i) => `<td class="${i === cells.length - 1 ? "r num" : ""}">${i === 1 ? `<b>${esc(c)}</b>` : esc(c)}</td>`).join("")}
+        <td>${r.tag ? `<span class="pill ${/winner|beat/i.test(r.tag) ? "ok" : /under|missed/i.test(r.tag) ? "bad" : /fatigu/i.test(r.tag) ? "warn" : "neutral"}">${esc(r.tag)}</span>` : ""}</td></tr>`; }).join("") + `</table>`;
+    if (s.kind === "bars") { const mx = Math.max(...s.rows.map((r) => r.n), 1);
+      body = `<div class="panel-body">${s.rows.map((r) => `<button class="barrow" data-k="${esc(r.link || "")}"><span>${r.sentiment ? `<span class="sdot ${r.sentiment}"></span> ` : ""}${esc(r.label)}</span><span class="track"><i style="width:${100 * r.n / mx}%;background:var(--L-${L})"></i></span><small>${r.n}</small></button>`).join("")}</div>`; }
+    if (s.kind === "spark") { const mx = Math.max(...s.rows.map((r) => r.n), 1);
+      body = `<div class="panel-body"><div class="spark">${s.rows.map((r) => `<div title="${r.label}: ${r.n}"><i style="height:${Math.max(6, 70 * r.n / mx)}px"></i><small>${r.label.slice(2)}</small></div>`).join("")}</div></div>`; }
+    if (s.kind === "quotes") body = `<div class="panel-body" style="padding-top:4px;padding-bottom:4px">${s.rows.map((q) => `<div class="quote"><p>“${esc(q.text)}”</p><small><span class="sdot ${q.sentiment || "neutral"}"></span>${esc(q.who)} · ${esc(q.where)}${q.date ? " · " + q.date : ""}${q.rating ? ` · ${q.rating}★` : ""}${q.skin ? ` · ${esc(q.skin)}` : ""}</small></div>`).join("")}</div>`;
+    return `<div class="panel"><div class="panel-head"><h3>${esc(s.title)}</h3>${s.rows ? `<span class="muted">${s.rows.length}</span>` : ""}</div>${body}</div>`;
+  };
+  $("#xprofile").innerHTML = `<div class="prof-inner">
+    <div class="prof-head"><span class="prof-ic" style="background:var(--L-${L}-soft);color:var(--L-${L})"><i data-lucide="${ic}"></i></span>
+      <div style="flex:1;min-width:0"><h1>${esc(e.name)}</h1><p>${esc(e.subtitle)}</p>${e.links?.length ? `<div class="links">${e.links.map((l) => link(l.id, l.name)).join("")}</div>` : ""}</div>
+      <button class="btn" id="askThis" title="Ask the agent about this"><i data-lucide="sparkles"></i>Ask</button></div>
+    <div class="stats">${e.metrics.map(([k, v]) => `<div><b>${esc(v)}</b><span>${esc(k)}</span></div>`).join("")}</div>
+    <div class="sec-grid">${e.sections.map(sec).join("")}</div></div>`;
+  $("#xprofile").scrollTop = 0;
+  $("#xprofile").querySelectorAll("[data-k]").forEach((el) => { const gid = el.dataset.k && graphIdFor(el.dataset.k); if (gid && G.byId[gid]) el.onclick = () => { if (!xN.get(gid)) xN.add(visNode(G.byId[gid])); if (nodeId && !xE.get().some((x) => (x.from === nodeId && x.to === gid) || (x.to === nodeId && x.from === gid))) expand(nodeId); selectNode(gid); }; });
+  $("#askThis").onclick = () => { show("chat"); input.value = `What should we know about ${tn.toLowerCase().replace(/s$/, "")} "${e.name}": performance, what consumers and the client say, and what to do next?`; input.focus(); input.dispatchEvent(new Event("input")); };
+  icons();
 }
 
 // ------------------------------------------------------------ skills

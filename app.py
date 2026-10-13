@@ -16,6 +16,7 @@ from google import genai  # noqa: E402
 from google.genai import types  # noqa: E402
 from pydantic import BaseModel  # noqa: E402
 
+import entities as ent  # noqa: E402
 import tidelight_spec as tl  # noqa: E402
 from brain import DATABASE as DATABASE_MB  # noqa: E402
 from brain import get_brain, read_log, read_skills  # noqa: E402
@@ -183,6 +184,11 @@ def brain_view():
                       "creatives": len([x for x in tl.CREATIVES if x[0] == c["id"]]), "fatigued": sum(1 for _, p in live if p["fatigued"])})
     return {"brand": tl.BRAND, "stats": stats, "layers": layers, "campaigns": camps, "graph": graph,
             "competitors": tl.COMPETITORS, "sov": tl.TIDELIGHT_SOV, "database": DATABASE_MB}
+
+
+@app.get("/api/entities")
+def entities_api():
+    return {"entities": ent.entities()}
 
 
 # ---------------------------------------------------------------- Promote to Skill
