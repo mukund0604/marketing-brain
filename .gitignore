@@ -5,3 +5,8 @@ generated/
 *.jpg
 static/index.old.html
 .claude/
+video/capture/
+video/build/
+video/vo/*.wav
+video/*.mp4
+video/*.png

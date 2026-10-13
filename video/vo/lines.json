@@ -1,0 +1,9 @@
+{
+ "problem": "Every brand's marketing knowledge is scattered. Brand books in PDFs, ad results in a warehouse, reviews on Amazon and Reddit, and client feedback buried in approval threads. So AI creative tools forget everything, and repeat the same mistakes.",
+ "brain": "Marketing Brain puts all of it into one memory, on HydraDB. Five layers: a brand book down to hex codes and FDA rules, eighteen months of campaigns with daily ad performance, what consumers say across seven platforms, the market, and the client's own feedback. All loaded in our production brand-graph schema, with HydraDB's Bring Your Own Graph.",
+ "explore": "And it's browsable. Every node is something the brain knows, ringed by how it performed. Open a campaign, and you get the intelligence: it missed its target, here's why, and here are the creatives that underperformed.",
+ "ask": "Ask a question, and the agent decides which layers to search. Then it shows its work: every HydraDB query, every result ranked by relevance, which memories it actually used, and the graph paths it followed. The summer SPF campaign missed because of white-cast complaints, and you can see exactly which reviews prove it.",
+ "compare": "Now, the same ad request, with and without memory. Without it, you get banned words, invented packaging, and no legal copy. With the brain: the real logo and packshot, deeper skin tones because that's what won before, and the exact FDA wording legal requires. Every decision traces back to a memory.",
+ "learn": "And when the client pushes back, the brain remembers. Legal's new rule is written to HydraDB memory, and on the very next generation, it's retrieved, tagged new, and applied.",
+ "outro": "Marketing Brain. A three-sixty memory on HydraDB that every creative agent reads from, shows its work, and learns from every rejection."
+}
